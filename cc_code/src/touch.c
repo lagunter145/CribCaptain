@@ -10,8 +10,12 @@
 #include "display.h"
 #include "lcd.h"
 #include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 
 int times_touched = 0; // if you're matt, look at the bottom of this code
+
+
 
 // taken from A.6.2 (pg. 944)
 void setup_t_irq(void) {
@@ -25,10 +29,10 @@ void setup_t_irq(void) {
 	EXTI->IMR = EXTI_IMR_MR0;
 	// Configure the Trigger Selection bits of the Interrupt line on rising edge (EXTI_RTSR_TR0 = 0x0001)
 	// Writing 1 to corresponding mask bit in EXTI_RTSR means "Rising trigger enabled (for Event and Interrupt) for input line"
-	EXTI->RTSR = EXTI_RTSR_TR0;
+	//EXTI->RTSR = EXTI_RTSR_TR0;
 	// Configure the Trigger Selection bits of the Interrupt line on falling edge (EXTI_FTSR_TR0 = 0x0001)
 	// Writing 1 to corresponding mask bit in EXTI_FTSR means "Falling trigger enabled (for Event and Interrupt) for input line"
-	// EXTI->FTSR = EXTI_FTSR_TR0;
+	EXTI->FTSR = EXTI_FTSR_TR0;
 	// Configure NVIC for External Interrupt
 	// Enable Interrupt on EXTI0_1
 	NVIC_EnableIRQ(EXTI0_1_IRQn);
@@ -37,19 +41,30 @@ void setup_t_irq(void) {
 }
 
 // taken from (https://controllerstech.com/external-interrupt-using-registers/)
-// will print to terminal if touched?
+// will print the x and y coords to terminal if touched
 void EXTI0_1_IRQHandler (void) {
 	// check the pin which triggered the interrupt
 	if((EXTI->PR & EXTI_PR_PR0) == EXTI_PR_PR0){
+		char xString[80] = "X:";
+		char yString[80] = "Y:";
 		// acknowledges the interrupt by writing a 1 to the register
-		EXTI->PR |= EXTI_PR_PR0;
-		LCD_DrawString(140,(80 + (times_touched * 16)),  WHITE, BLACK, "YAY!", 16, 1);
-		nano_wait(300000000);
+		LCD_Clear(BLACK);
+		uint16_t x, y;
+		LCD_RD_XY(&x, &y);
+		//strcat(xString, itoa(x, xString, 10));
+		LCD_DrawString(140,(80),  WHITE, BLACK, itoa(x, xString, 10), 16, 1);
+		//strcat(yString, itoa(y, yString, 10));
+		LCD_DrawString(140,(80 + (16)),  WHITE, BLACK, itoa(y, yString, 10), 16, 1);
+		nano_wait(300000000); //REPLACE WITH A ONE SHOT TIMER
+		if((EXTI->PR & EXTI_PR_PR0) == EXTI_PR_PR0){
+			EXTI->PR |= EXTI_PR_PR0;
+		}
 		times_touched++;
 	}
 }
 
 // 2.8inch_SPI_Module_ILI9341_MSP2807_V1.1 from http://www.lcdwiki.com/2.8inch_SPI_Module_ILI9341_SKU:MSP2807
+
 
 // read adc values from touch screen IC with SPI bus
 // https://github.com/LonelyWolf/stm32/blob/master/ST7528/periph/spi.c
@@ -58,10 +73,11 @@ uint16_t LCD_RD_TOUCH_DATA(uint8_t CMD) {
 	// send command to SPI, TXE cleared
 	*((uint8_t*)&SPI->DR) = CMD;
 	// wait while receive buffer is empty
-	while(!(SPI->SR & SPI_SR_RXNE));
+	//while(!(SPI->SR & SPI_SR_RXNE));
 	// return received byte
 	return SPI->DR;
 }
+
 
 // read touch screen coordinates (x or y) multiple times (READ_TIMES) and averages the value
 uint16_t LCD_RD_XORY(uint8_t xy) {
@@ -70,8 +86,16 @@ uint16_t LCD_RD_XORY(uint8_t xy) {
 	uint16_t lowest = 0;
 	uint16_t sum = 0;
 
-	CS_LOW;
-	CST_HIGH;
+	//because the chip select line is normally held high, when touch is needed, the
+	//chip select for touch (CST) must be set low and the chip select for the display
+	//needs to be set high
+    while(SPI1->SR & SPI_SR_BSY);
+	CS_HIGH;
+	CST_LOW;
+
+	//printf("------------------CHIP SELECT CODE: REACHED HERE IN CODE----------------");
+
+
 	// takes 5 reads from the SPI interface and records the highest and lowest values (outliers)
 	for(int i = 0; i < READ_TIMES; i++) {
 		buf[i] = LCD_RD_TOUCH_DATA(xy);
@@ -89,7 +113,10 @@ uint16_t LCD_RD_XORY(uint8_t xy) {
 	}
 	sum -= lowest;
 	sum -= highest;
-	CST_LOW;
+
+	//changes the chips selects again
+    while(SPI1->SR & SPI_SR_BSY);
+	CST_HIGH;
 	CS_HIGH;
 
 	// returns average of values read
