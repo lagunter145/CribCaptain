@@ -13,6 +13,7 @@
 #include "lcd.h"
 #include "touch.h"
 #include "test.h"
+#include "rfid.h"
 #include <stdio.h>
 #include <stdint.h>
 			

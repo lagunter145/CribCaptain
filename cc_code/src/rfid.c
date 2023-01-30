@@ -6,7 +6,7 @@
  */
 
 #include "stm32f0xx.h"
-
+#include "rfid.h"
 
 // USART5 was used from 362 Lab 10. I just copied over the initiation and
 // basic read/write functions.
@@ -44,21 +44,106 @@ void init_usart5()
     // check TEACK and REACK bits of ISR to be set
     while(!((USART5->ISR & USART_ISR_TEACK) && (USART5->ISR & USART_ISR_REACK)));
 }
+// is multibuffer communication needed? If so, must also enable DMA
+
+// overrun error (ORE bit) can occur if the RXNE flag is set when the next data is received.
+    // interrupt only sent if RXNEIE or EIE bit is set
+// framing error (FE bit) can occur if stop bit not recognized
+    // no interrupt is generated for single byte comm.
+    // if EIE bit set in CR3 and multibuffer comm, then interrupt is sent
+
 
 int write_byte(int c)
 {
+    // wait for TXE bit to be set
     while (!(USART5->ISR & USART_ISR_TXE)) {}
 
     USART5->TDR = c;
 
     return c;
 }
+// pg 687: "8. After writing the last data into the USARTx_TDR register, wait
+// until TC=1. This indicates that the transmission of the last frame is complete.
+// This is required for instance when the USART is disabled or enters the Halt
+// mode to avoid corrupting last transmission.
 
 int read_byte(void)
 {
+    // wait for RXNE bit to be set
     while (!(USART5->ISR & USART_ISR_RXNE)) {}
     int c = USART5->RDR;
 
     return c;
 }
 
+// not really sure what the return value should be
+int writeCommand(uint8_t * buf, int buf_len)
+{
+    for(int i = 0; i < buf_len; i++)
+    {
+        write_byte(buf[i]);
+    }
+    return 0;
+}
+// not really sure what the return value should be
+int readResponse(uint8_t * buf, int buf_len)
+{
+    for(int i = 0; i < buf_len; i++)
+    {
+        buf[i] = read_byte();
+    }
+    return 1;
+}
+
+// from Elechouse Github
+// https://github.com/elechouse/PN532/blob/PN532_HSU/PN532/PN532.cpp
+// input arg 'reg' is the 16 bit register address
+// returns register value
+int readRegister(uint16_t reg)
+{
+    int response;
+    // in order to read, have to first write a READREGISTER command
+    pn532_packetbuffer[0] = PN532_COMMAND_READREGISTER;
+    pn532_packetbuffer[1] = (reg >> 8) & 0xFF;
+    pn532_packetbuffer[2] = reg & 0xFF;
+
+    if (writeCommand(pn532_packetbuffer, 3)) {
+        return 0;
+    }
+
+    // read data packet
+    int16_t status = readResponse(pn532_packetbuffer, sizeof(pn532_packetbuffer));
+    if (0 > status) {
+        return 0;
+    }
+
+    response = pn532_packetbuffer[0];
+
+    return response;
+}
+
+// input arg 'reg' is the 16 bit register address
+// input arg 'val' is the 8 bit value to write
+// returns 0 for failure, 1 for success
+int writeRegister(uint16_t reg, uint8_t val)
+{
+    int response;
+
+    pn532_packetbuffer[0] = PN532_COMMAND_WRITEREGISTER;
+    pn532_packetbuffer[1] = (reg >> 8) & 0xFF;
+    pn532_packetbuffer[2] = reg & 0xFF;
+    pn532_packetbuffer[3] = val;
+
+
+    if (writeCommand(pn532_packetbuffer, 4)) {
+        return 0;
+    }
+
+    // read data packet
+    int16_t status = readResponse(pn532_packetbuffer, sizeof(pn532_packetbuffer));
+    if (0 > status) {
+        return 0;
+    }
+
+    return 1;
+}
