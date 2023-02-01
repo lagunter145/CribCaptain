@@ -23,8 +23,12 @@ int main(void)
 	setup_t_irq();
 	LCD_Init(0,0,0);
 	LCD_Clear(BLACK);
-	while(1) {
-		printf("Passing");
+	//Display_Test();
+	for(;;) {
+		nano_wait(300000000);
 	}
+//	while(1) {
+//		printf("Passing");
+//	}
 //	Touch_Test();
 }

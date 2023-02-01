@@ -58,7 +58,7 @@ void EXTI0_1_IRQHandler (void) {
 		nano_wait(300000000); //REPLACE WITH A ONE SHOT TIMER
 		if((EXTI->PR & EXTI_PR_PR0) == EXTI_PR_PR0){
 			EXTI->PR |= EXTI_PR_PR0;
-		}
+	    }
 		times_touched++;
 	}
 }
@@ -70,14 +70,49 @@ void EXTI0_1_IRQHandler (void) {
 // https://github.com/LonelyWolf/stm32/blob/master/ST7528/periph/spi.c
 // SPIx_SendRecv()
 uint16_t LCD_RD_TOUCH_DATA(uint8_t CMD) {
+	CST_LOW;
 	// send command to SPI, TXE cleared
-	*((uint8_t*)&SPI->DR) = CMD;
+	//*((uint8_t*)&SPI->DR) = CMD;
+	//nano_wait(1000);
+	LCD_WR_DATA(CMD);
 	// wait while receive buffer is empty
-	//while(!(SPI->SR & SPI_SR_RXNE));
+	//while((SPI->SR & SPI_SR_RXNE));
 	// return received byte
-	return SPI->DR;
+	uint32_t temp = SPI->DR;
+//	temp = temp << 4;
+//	temp = temp >> 4;
+	//temp &= 0xff80;
+	CST_HIGH;
+	return temp;
 }
 
+
+/*
+
+uint16_t LCD_RD_TOUCH_DATA(uint8_t CMD) {
+	uint16_t num = 0;
+	uint8_t count = 0;
+	CLK_LOW;
+	DIN_LOW;
+	LCD_WR_DATA(CMD);
+	CLK_LOW;
+	nano_wait(1000);
+	CLK_HIGH;
+	CLK_LOW;
+	for(count = 0; count < 16; count++) {
+		num <<= 1;
+		CLK_LOW;
+		CLK_HIGH;
+		//if(TDOUT_STATE) {
+		if(GPIOB->ODR & GPIO_ODR_4) {
+			num += 1;
+		} else {
+			num += 0;
+		}
+	}
+	num >>= 4;
+	return num;
+} */
 
 // read touch screen coordinates (x or y) multiple times (READ_TIMES) and averages the value
 uint16_t LCD_RD_XORY(uint8_t xy) {
@@ -91,8 +126,7 @@ uint16_t LCD_RD_XORY(uint8_t xy) {
 	//needs to be set high
     while(SPI1->SR & SPI_SR_BSY);
 	CS_HIGH;
-	CST_LOW;
-
+	//CST_LOW;
 	//printf("------------------CHIP SELECT CODE: REACHED HERE IN CODE----------------");
 
 
@@ -116,7 +150,7 @@ uint16_t LCD_RD_XORY(uint8_t xy) {
 
 	//changes the chips selects again
     while(SPI1->SR & SPI_SR_BSY);
-	CST_HIGH;
+	//CST_HIGH;
 	CS_HIGH;
 
 	// returns average of values read

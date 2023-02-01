@@ -12,6 +12,8 @@
 // commands to read x or y for ILI9341 (driver for display)
 # define CMD_RDX 0x90
 # define CMD_RDY 0xD0
+//# define CMD_RDX 0x9
+//# define CMD_RDY 0xB
 
 void setup_t_irq(void);
 uint16_t LCD_RD_TOUCH_DATA(uint8_t CMD);

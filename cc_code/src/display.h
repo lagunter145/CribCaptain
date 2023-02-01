@@ -32,5 +32,26 @@ void nano_wait(unsigned int);
 #define DC_BIT (1<<DC_NUM)
 #define DC_HIGH do { GPIOB->BSRR = GPIO_BSRR_BS_14; } while(0)
 #define DC_LOW  do { GPIOB->BSRR = GPIO_BSRR_BR_14; } while(0)
+// display's SCK
+#define SCK_NUM 3
+#define SCK_BIT (1<<SCK_NUM)
+#define SCK_HIGH do { GPIOB->BSRR = GPIO_BSRR_BS_3; } while(0)
+#define SCK_LOW  do { GPIOB->BSRR = GPIO_BSRR_BR_3; } while(0)
+// display's SCK
+#define CLK_NUM 3
+#define CLK_BIT (1<<SCK_NUM)
+#define CLK_HIGH do { GPIOB->BSRR = GPIO_BSRR_BS_3; } while(0)
+#define CLK_LOW  do { GPIOB->BSRR = GPIO_BSRR_BR_3; } while(0)
+// touch's DIN
+#define DIN_NUM 5
+#define DIN_BIT (1<<DIN_NUM)
+#define DIN_HIGH do { GPIOB->BSRR = GPIO_BSRR_BS_5; } while(0)
+#define DIN_LOW  do { GPIOB->BSRR = GPIO_BSRR_BR_5; } while(0)
+// touch's DIN
+#define DIN_NUM 5
+#define DIN_BIT (1<<DIN_NUM)
+#define DIN_HIGH do { GPIOB->BSRR = GPIO_BSRR_BS_5; } while(0)
+#define DIN_LOW  do { GPIOB->BSRR = GPIO_BSRR_BR_5; } while(0)
+
 
 #endif /* DISPLAY_H_ */
