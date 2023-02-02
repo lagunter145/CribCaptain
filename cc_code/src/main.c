@@ -20,12 +20,23 @@
 
 int main(void)
 {
+    /*
 	setup_spi1();
 	setup_t_irq();
 	LCD_Init(0,0,0);
 	LCD_Clear(BLACK);
 	while(1) {
 		printf("Passing");
-	}
+	}*/
+    init_usart5();
+    /*uint32_t versiondata = 0;
+    wakeup();
+    versiondata = getFirmwareVersion();
+    printf("%d\n", versiondata);
+    printf("pass");*/
+    while(1)
+    {
+        write_byte(0x55);
+    }
 //	Touch_Test();
 }

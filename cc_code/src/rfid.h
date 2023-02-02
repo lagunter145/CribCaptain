@@ -7,21 +7,27 @@
 
 #ifndef RFID_H_
 #define RFID_H_
-
+#include "stdlib.h"
 // buffer to hold values to send/receive to/from the PN532
 uint8_t pn532_packetbuffer[64];
 
+// byte that holds command for writing to PN532
 uint8_t command;
 
 // function declarations
 void init_usart5();
-int write_byte(int c);
-int read_byte(void);
-int writeCommand(uint8_t * buf, int buf_len);
-int readResponse(uint8_t * buf, int buf_len);
+void write_byte(uint8_t c);
+int8_t read_byte(void);
+int8_t receive(uint8_t * buf, int len, uint16_t timeout);
+int8_t readAckFrame();
+int8_t writeCommand(const uint8_t *header, uint8_t hlen, const uint8_t *body, uint8_t blen);
+int16_t readResponse(uint8_t * buf, uint8_t len, uint16_t timeout);
 
-int readRegister(uint16_t reg);
-int writeRegister(uint16_t reg, uint8_t val);
+uint32_t readRegister(uint16_t reg);
+uint32_t writeRegister(uint16_t reg, uint8_t val);
+
+uint32_t getFirmwareVersion(void);
+int readPassiveTargetID(uint8_t cardbaudrate, uint8_t *uid, uint8_t *uidLength, uint16_t timeout);
 
 // Command Codes
 #define PN532_COMMAND_DIAGNOSE              (0x00)
@@ -59,7 +65,6 @@ int writeRegister(uint16_t reg, uint8_t val);
 
 #define PN532_RESPONSE_INDATAEXCHANGE       (0x41)
 #define PN532_RESPONSE_INLISTPASSIVETARGET  (0x4B)
-
 
 #define PN532_MIFARE_ISO14443A              (0x00)
 

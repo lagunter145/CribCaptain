@@ -14,6 +14,8 @@
 // lot of features (don't know if we actually need). USART1/2 are fully featured.
 // USART1_TX: PA9 AF1, PB6 AF0
 // USART1_RX: PA10 AF1, PB7 AF0
+
+//*****      TO DO:      *****//
 //***** CHANGE TO USART1 *****//
 void init_usart5()
 {
@@ -52,36 +54,43 @@ void init_usart5()
     // no interrupt is generated for single byte comm.
     // if EIE bit set in CR3 and multibuffer comm, then interrupt is sent
 
-
-int write_byte(int c)
+// basic function to write a byte to the TDR register
+void write_byte(uint8_t c)
 {
     // wait for TXE bit to be set
     while (!(USART5->ISR & USART_ISR_TXE)) {}
 
     USART5->TDR = c;
-
-    return c;
 }
 // pg 687: "8. After writing the last data into the USARTx_TDR register, wait
 // until TC=1. This indicates that the transmission of the last frame is complete.
 // This is required for instance when the USART is disabled or enters the Halt
 // mode to avoid corrupting last transmission.
 
-int read_byte(void)
+// basic function to read a byte from the RDR register
+int8_t read_byte(void)
 {
     // wait for RXNE bit to be set
-    while (!(USART5->ISR & USART_ISR_RXNE)) {}
+//    while (!(USART5->ISR & USART_ISR_RXNE)) {}
     int c = USART5->RDR;
 
     return c;
 }
 
-/*
+/***************************************************************************
  * THE FOLLOWING FUNCTIONS ARE LARGELY TAKEN FROM ELECHOUSE'S C++ LIBRARY ON
  * GITHUB, TRANSLATED TO C SYNTAX.
  * https://github.com/elechouse/PN532/blob/PN532_HSU/PN532/PN532.cpp
-*/
+***************************************************************************/
 
+void wakeup()
+{
+    write_byte(0x55);
+    write_byte(0x55);
+    write_byte(0);
+    write_byte(0);
+    write_byte(0);
+}
 
 /**
     @brief receive data .
@@ -123,16 +132,16 @@ int8_t receive(uint8_t *buf, int len, uint16_t timeout)
 int8_t readAckFrame()
 {
     const uint8_t PN532_ACK[] = {0, 0, 0xFF, 0, 0xFF, 0};
-    uint8_t ackBuf[sizeof(PN532_ACK)];
+    uint8_t ackBuf[6/*sizeof(PN532_ACK)*/];
 
     //DMSG("\nAck: ");
 
-    if( receive(ackBuf, sizeof(PN532_ACK), 0 /*PN532_ACK_WAIT_TIME*/) <= 0 ){
+    if( receive(ackBuf, 6 /*sizeof(PN532_ACK)*/, 0 /*PN532_ACK_WAIT_TIME*/) <= 0 ){
         //DMSG("Timeout\n");
         return PN532_TIMEOUT;
     }
 
-    if( memcmp(ackBuf, PN532_ACK, sizeof(PN532_ACK)) ){
+    if( memcmp(ackBuf, PN532_ACK, 6 /*sizeof(PN532_ACK)*/) ){
         //DMSG("Invalid\n");
         return PN532_INVALID_ACK;
     }
@@ -176,12 +185,12 @@ int8_t writeCommand(const uint8_t *header, uint8_t hlen, const uint8_t *body, ui
     }
 
     for(int j = 0; j < blen; j++) {
-        write_byte(body, blen);
+        write_byte(body[j]);
     }
     for (uint8_t i = 0; i < blen; i++) {
         sum += body[i];
 
-        DMSG_HEX(body[i]);
+        //DMSG_HEX(body[i]);
     }
 
     uint8_t checksum = ~sum + 1;            // checksum of TFI + DATA
@@ -251,22 +260,27 @@ int16_t readResponse(uint8_t * buf, uint8_t len, uint16_t timeout)
     return length[0];
 }
 
-// input arg 'reg' is the 16 bit register address
-// returns register value
-int readRegister(uint16_t reg)
+/**************************************************************************/
+/*!
+    @brief  Read a PN532 register.
+    @param  reg  the 16-bit register address.
+    @returns  The register value.
+*/
+/**************************************************************************/
+uint32_t readRegister(uint16_t reg)
 {
-    int response;
+    uint32_t response;
     // in order to read, have to first write a READREGISTER command
     pn532_packetbuffer[0] = PN532_COMMAND_READREGISTER;
     pn532_packetbuffer[1] = (reg >> 8) & 0xFF;
     pn532_packetbuffer[2] = reg & 0xFF;
 
-    if (writeCommand(pn532_packetbuffer, 3)) {
+    if (writeCommand(pn532_packetbuffer, 3, 0, 0)) {
         return 0;
     }
 
     // read data packet
-    int16_t status = readResponse(pn532_packetbuffer, sizeof(pn532_packetbuffer), 0);
+    int16_t status = readResponse(pn532_packetbuffer, 64 /*sizeof(pn532_packetbuffer)*/, 0);
     if (0 > status) {
         return 0;
     }
@@ -276,12 +290,17 @@ int readRegister(uint16_t reg)
     return response;
 }
 
-// input arg 'reg' is the 16 bit register address
-// input arg 'val' is the 8 bit value to write
-// returns 0 for failure, 1 for success
-int writeRegister(uint16_t reg, uint8_t val)
+/**************************************************************************/
+/*!
+    @brief  Write to a PN532 register.
+    @param  reg  the 16-bit register address.
+    @param  val  the 8-bit value to write.
+    @returns  0 for failure, 1 for success.
+*/
+/**************************************************************************/
+uint32_t writeRegister(uint16_t reg, uint8_t val)
 {
-    int response;
+    uint32_t response;
 
     pn532_packetbuffer[0] = PN532_COMMAND_WRITEREGISTER;
     pn532_packetbuffer[1] = (reg >> 8) & 0xFF;
@@ -289,17 +308,51 @@ int writeRegister(uint16_t reg, uint8_t val)
     pn532_packetbuffer[3] = val;
 
 
-    if (writeCommand(pn532_packetbuffer, 4)) {
+    if (writeCommand(pn532_packetbuffer, 4, NULL, 0)) {
         return 0;
     }
 
     // read data packet
-    int16_t status = readResponse(pn532_packetbuffer, sizeof(pn532_packetbuffer), 0);
+    int16_t status = readResponse(pn532_packetbuffer, 64 /*sizeof(pn532_packetbuffer)*/, 0);
     if (0 > status) {
         return 0;
     }
 
     return 1;
+}
+
+
+/**************************************************************************/
+/*!
+    @brief  Checks the firmware version of the PN5xx chip
+    @returns  The chip's firmware version and ID
+*/
+/**************************************************************************/
+uint32_t getFirmwareVersion(void)
+{
+    uint32_t response;
+
+    pn532_packetbuffer[0] = PN532_COMMAND_GETFIRMWAREVERSION;
+
+    if (writeCommand(pn532_packetbuffer, 1, NULL, 0)) {
+        return 0;
+    }
+
+    // read data packet
+    int16_t status = readResponse(pn532_packetbuffer, 64 /*sizeof(pn532_packetbuffer)*/, 0);
+    if (0 > status) {
+        return 0;
+    }
+
+    response = pn532_packetbuffer[0];
+    response <<= 8;
+    response |= pn532_packetbuffer[1];
+    response <<= 8;
+    response |= pn532_packetbuffer[2];
+    response <<= 8;
+    response |= pn532_packetbuffer[3];
+
+    return response;
 }
 
 /**************************************************************************/
@@ -319,7 +372,7 @@ int readPassiveTargetID(uint8_t cardbaudrate, uint8_t *uid, uint8_t *uidLength, 
     pn532_packetbuffer[1] = 1;  // max 1 cards at once (we can set this to 2 later)
     pn532_packetbuffer[2] = cardbaudrate;
 
-    if (writeCommand(pn532_packetbuffer, 3)) {
+    if (writeCommand(pn532_packetbuffer, 3, 0, 0)) {
         return 0x0;  // command failed
     }
 
