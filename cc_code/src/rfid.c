@@ -71,7 +71,7 @@ void write_byte(uint8_t c)
 int8_t read_byte(void)
 {
     // wait for RXNE bit to be set
-//    while (!(USART5->ISR & USART_ISR_RXNE)) {}
+    while (!(USART5->ISR & USART_ISR_RXNE)) {}
     int c = USART5->RDR;
 
     return c;

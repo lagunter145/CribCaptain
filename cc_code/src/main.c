@@ -29,14 +29,14 @@ int main(void)
 		printf("Passing");
 	}*/
     init_usart5();
-    /*uint32_t versiondata = 0;
+    uint32_t versiondata = 0;
     wakeup();
     versiondata = getFirmwareVersion();
     printf("%d\n", versiondata);
-    printf("pass");*/
-    while(1)
-    {
-        write_byte(0x55);
-    }
+    printf("pass");
+//    while(1)
+//    {
+//        write_byte(0x55);
+//    }
 //	Touch_Test();
 }
