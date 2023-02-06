@@ -1,0 +1,3 @@
+(fp_lib_table
+  (lib (name "Adafruit RA8875 TFT Breakout")(type "KiCad")(uri "$(KIPRJMOD)/Adafruit RA8875 TFT Breakout.pretty")(options "")(descr ""))
+)
