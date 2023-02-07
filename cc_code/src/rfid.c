@@ -68,11 +68,11 @@ void write_byte(uint8_t c)
 // mode to avoid corrupting last transmission.
 
 // basic function to read a byte from the RDR register
-int8_t read_byte(void)
+uint8_t read_byte(void)
 {
     // wait for RXNE bit to be set
     while (!(USART5->ISR & USART_ISR_RXNE)) {}
-    int c = USART5->RDR;
+    uint8_t c = USART5->RDR;
 
     return c;
 }
@@ -103,7 +103,7 @@ void wakeup()
 int8_t receive(uint8_t *buf, int len, uint16_t timeout)
 {
   int read_bytes = 0;
-  int ret;
+  uint8_t ret;
   //unsigned long start_millis;
 
   while (read_bytes < len) {
@@ -115,7 +115,7 @@ int8_t receive(uint8_t *buf, int len, uint16_t timeout)
      }
     } while((timeout == 0) /*|| ((millis()- start_millis ) < timeout)*/);
 
-    if (ret < 0) {
+   if (ret < 0) {
         if(read_bytes){
             return read_bytes;
         }else{
@@ -155,10 +155,10 @@ int8_t writeCommand(const uint8_t *header, uint8_t hlen, const uint8_t *body, ui
     if(_serial->available()){
         DMSG("Dump serial buffer: ");
     }
-    while(_serial->available()){
-        uint8_t ret = _serial->read();
-        DMSG_HEX(ret);
-    }*/
+    */
+    while(USART5->ISR & USART_ISR_RXNE){
+        uint8_t ret = USART5->RDR;
+    }
 
     command = header[0];
 
@@ -177,8 +177,7 @@ int8_t writeCommand(const uint8_t *header, uint8_t hlen, const uint8_t *body, ui
 
     for(int i = 0; i < hlen; i++) {
         write_byte(header[i]);
-    }
-    for (uint8_t i = 0; i < hlen; i++) {
+    }    for (uint8_t i = 0; i < hlen; i++) {
         sum += header[i];
 
         //DMSG_HEX(header[i]);

@@ -17,7 +17,7 @@ uint8_t command;
 // function declarations
 void init_usart5();
 void write_byte(uint8_t c);
-int8_t read_byte(void);
+uint8_t read_byte(void);
 int8_t receive(uint8_t * buf, int len, uint16_t timeout);
 int8_t readAckFrame();
 int8_t writeCommand(const uint8_t *header, uint8_t hlen, const uint8_t *body, uint8_t blen);

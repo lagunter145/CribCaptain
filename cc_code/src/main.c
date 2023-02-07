@@ -34,9 +34,9 @@ int main(void)
     versiondata = getFirmwareVersion();
     printf("%d\n", versiondata);
     printf("pass");
-//    while(1)
-//    {
-//        write_byte(0x55);
-//    }
+    /*while(1)
+    {
+        write_byte(0x55);
+    }*/
 //	Touch_Test();
 }
