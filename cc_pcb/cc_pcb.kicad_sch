@@ -5273,7 +5273,7 @@
       (reference "J?") (unit 1) (value "Wi-Fi Module") (footprint "")
     )
     (path "/f044b3af-6b88-4419-a8ca-1ffbc909265d"
-      (reference "J?") (unit 1) (value "SD Card Reader") (footprint "")
+      (reference "J?") (unit 1) (value "SD Card Reader") (footprint "imported_footprints:Micro_SD_card_reader")
     )
     (path "/068a955a-1725-4f73-86ce-aac6ae60ec2d"
       (reference "L?") (unit 1) (value "1m") (footprint "")
