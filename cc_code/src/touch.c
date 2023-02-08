@@ -15,7 +15,44 @@
 
 int times_touched = 0; // if you're matt, look at the bottom of this code
 
+// setup GPIOB/GPIOC pins for display and setup spi2 to interface with the display's touch
+void setup_spi2() {
+	// enable RCC clock to GPIO B Ports
+	RCC->AHBENR |= (RCC_AHBENR_GPIOBEN | RCC_AHBENR_GPIOCEN);
+	//clear and set the MODER values for PB9 for outputs (01 in MODER)
+	GPIOB->MODER &= ~(GPIO_MODER_MODER9);
+	GPIOB->MODER |= (GPIO_MODER_MODER9_0);
+	// clear and set the MODER for PB10 for alternate functions (10 in MODER)
+	GPIOB->MODER &= ~(GPIO_MODER_MODER10);
+	GPIOB->MODER |= (GPIO_MODER_MODER10_1);
+	// clear and set the MODER for PC2,3 for alternate functions (10 in MODER)
+	GPIOC->MODER &= ~(GPIO_MODER_MODER2 | GPIO_MODER_MODER3);
+	GPIOC->MODER |= (GPIO_MODER_MODER2_1 | GPIO_MODER_MODER3_1);
 
+	// sets the bits for PB9 for the ODR
+	GPIOB->ODR |= (GPIO_ODR_9);
+
+	// sets the AFR values for PB10 as 0101 (AF5) for the SPI2_SCK
+	GPIOB->AFR[1] &= ~(GPIO_AFRH_AFR10);
+	GPIOB->AFR[1] |= (0x0101) < (4 * 2);
+	// sets the AFR values for PC2,3 as 0001 (AF2) for the SPI2_MISO,SPI2_MOSI
+	GPIOC->AFR[0] &= ~(GPIO_AFRL_AFR2 | GPIO_AFRL_AFR3);
+	GPIOC->AFR[0] |= ((0x0001) < (4 * 2)) | ((0x0001) < (4 * 3));
+
+
+	********
+
+	// full duplex SPI peripheral
+	RCC->APB2ENR |= RCC_APB2ENR_SPI1EN; // enables RCC clock to SPI1
+	// spi1_cr1 config
+	SPI1->CR1 &= ~(SPI_CR1_SPE); // disable spi enable pin so that spi can be configured
+	SPI1->CR1 |= SPI_CR1_MSTR; // configure spi for master mode
+	SPI1->CR1 &= ~(SPI_CR1_BR); // baud rate set high as possible (SCK divisor is as small as possible)
+	SPI1->CR1 |= (SPI_CR1_SSI | SPI_CR1_SSM); // set SSM(software slave management)/SSI(internal slave select) for SPI1
+	SPI1->CR2 &= ~(SPI_CR2_DS); // clears what was set for word size
+	SPI1->CR2 |= (SPI_CR2_DS_0 | SPI_CR2_DS_1 | SPI_CR2_DS_2); // sets word size to 8 bits
+	SPI1->CR1 |= SPI_CR1_SPE; // enable spi1
+}
 
 // taken from A.6.2 (pg. 944)
 void setup_t_irq(void) {
@@ -70,7 +107,6 @@ void EXTI0_1_IRQHandler (void) {
 // https://github.com/LonelyWolf/stm32/blob/master/ST7528/periph/spi.c
 // SPIx_SendRecv()
 uint16_t LCD_RD_TOUCH_DATA(uint8_t CMD) {
-	CST_LOW;
 	// send command to SPI, TXE cleared
 	//*((uint8_t*)&SPI->DR) = CMD;
 	//nano_wait(1000);
@@ -78,7 +114,7 @@ uint16_t LCD_RD_TOUCH_DATA(uint8_t CMD) {
 	// wait while receive buffer is empty
 	//while((SPI->SR & SPI_SR_RXNE));
 	// return received byte
-	uint32_t temp = SPI->DR;
+	uint32_t temp = SPI1->DR;
 //	temp = temp << 4;
 //	temp = temp >> 4;
 	//temp &= 0xff80;
@@ -125,7 +161,7 @@ uint16_t LCD_RD_XORY(uint8_t xy) {
 	//chip select for touch (CST) must be set low and the chip select for the display
 	//needs to be set high
     while(SPI1->SR & SPI_SR_BSY);
-	CS_HIGH;
+	//CS_HIGH;
 	//CST_LOW;
 	//printf("------------------CHIP SELECT CODE: REACHED HERE IN CODE----------------");
 

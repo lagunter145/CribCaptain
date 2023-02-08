@@ -16,6 +16,7 @@
 //# define CMD_RDY 0xB
 
 void setup_t_irq(void);
+void setup_spi2();
 uint16_t LCD_RD_TOUCH_DATA(uint8_t CMD);
 uint16_t LCD_RD_XORY(uint8_t xy);
 uint8_t LCD_RD_XY(uint16_t *x, uint16_t *y);

@@ -1,45 +1,73 @@
-/*
- * lcd.c
- *
- *  Created on: Jan 20, 2023
- *      Author: gunter3
- */
-
-
 #include "stm32f0xx.h"
 #include <stdint.h>
 #include "lcd.h"
-#include "display.h"
 
 lcd_dev_t lcddev;
 
-// setup GPIOB pins for display and setup spi1 to interface with the display
-void setup_spi1() {
-	// enable RCC clock to GPIO B Ports
-	RCC->AHBENR |= RCC_AHBENR_GPIOBEN;
-	//clear and set the MODER values for PB8,11,14 for outputs (01 in MODER)
-	GPIOB->MODER &= ~(GPIO_MODER_MODER8 | GPIO_MODER_MODER11 | GPIO_MODER_MODER14);
-	GPIOB->MODER |= (GPIO_MODER_MODER8_0 | GPIO_MODER_MODER11_0 | GPIO_MODER_MODER14_0);
-	// clear and set the MODER for PB3,4,5 for alternate functions (10 in MODER)
-	GPIOB->MODER &= ~(GPIO_MODER_MODER3 | GPIO_MODER_MODER4 | GPIO_MODER_MODER5);
-	GPIOB->MODER |= (GPIO_MODER_MODER3_1 | GPIO_MODER_MODER4_1| GPIO_MODER_MODER5_1);
+#define SPI SPI1
 
-	// sets the bits for PB8,9,11,14 for the ODR
-	GPIOB->ODR |= (GPIO_ODR_8 | GPIO_ODR_11 | GPIO_ODR_14);
-	// sets the AFR values for PB3,4,5 as 0000 to set them as alternative functions for SPI1
-	GPIOB->AFR[0] &= ~(GPIO_AFRL_AFR3 | GPIO_AFRL_AFR4 | GPIO_AFRL_AFR5);
+#define CS_NUM  8
+#define CS_BIT  (1<<CS_NUM)
+#define CS_HIGH do { GPIOB->BSRR = GPIO_BSRR_BS_8; } while(0)
+#define CS_LOW do { GPIOB->BSRR = GPIO_BSRR_BR_8; } while(0)
+#define RESET_NUM 11
+#define RESET_BIT (1<<RESET_NUM)
+#define RESET_HIGH do { GPIOB->BSRR = GPIO_BSRR_BS_11; } while(0)
+#define RESET_LOW  do { GPIOB->BSRR = GPIO_BSRR_BR_11; } while(0)
+#define DC_NUM 14
+#define DC_BIT (1<<DC_NUM)
+#define DC_HIGH do { GPIOB->BSRR = GPIO_BSRR_BS_14; } while(0)
+#define DC_LOW  do { GPIOB->BSRR = GPIO_BSRR_BR_14; } while(0)
 
-	// full duplex SPI peripheral
-	RCC->APB2ENR |= RCC_APB2ENR_SPI1EN; // enables RCC clock to SPI1
-	// spi1_cr1 config
-	SPI1->CR1 &= ~(SPI_CR1_SPE); // disable spi enable pin so that spi can be configured
-	SPI1->CR1 |= SPI_CR1_MSTR; // configure spi for master mode
-	SPI1->CR1 &= ~(SPI_CR1_BR); // baud rate set high as possible (SCK divisor is as small as possible)
-	SPI1->CR1 |= (SPI_CR1_SSI | SPI_CR1_SSM); // set SSM(software slave management)/SSI(internal slave select) for SPI1
-	SPI1->CR2 &= ~(SPI_CR2_DS); // clears what was set for word size
-	SPI1->CR2 |= (SPI_CR2_DS_0 | SPI_CR2_DS_1 | SPI_CR2_DS_2); // sets word size to 8 bits
-	SPI1->CR1 |= SPI_CR1_SPE; // enable spi1
+//Added for 477 -------------------------------------------------------------------
+void setup_spi1(void)
+{
+    RCC->AHBENR |= RCC_AHBENR_GPIOBEN;
+    // configure pb 8, 11, 14 as outputs
+	GPIOB->MODER &= ~(GPIO_MODER_MODER8 | GPIO_MODER_MODER9| GPIO_MODER_MODER11 | GPIO_MODER_MODER14);
+    //GPIOB->MODER &= ~(0x30c30000);
+	//GPIOB->MODER |= (GPIO_MODER_MODER8_0 | GPIO_MODER_MODER9_0| GPIO_MODER_MODER11_0 | GPIO_MODER_MODER14_0);
+    GPIOB->MODER |= (0x10410880);
+    // set odr vals for pb 8, 11, 14 high
+    GPIOB->ODR |= 0x4900;
+    // configure pb 3 and 5 as alt function 0
+    GPIOB->AFR[0] &= ~0x00f0f000;
+
+    // set up spi1 peripheral
+
+    RCC->APB2ENR |= RCC_APB2ENR_SPI1EN;
+    // clear cr1 spe
+    SPI1->CR1 &= ~(SPI_CR1_SPE);
+
+    // set baud rate to as high as possible (max divisor?)
+    SPI1->CR1 &= ~ SPI_CR1_BR;
+
+    // config spi channel in mast mode
+    SPI1->CR1 |= SPI_CR1_MSTR;
+
+    // config intergace for 8 bit word size (0111)
+    SPI1->CR2 = SPI_CR2_DS_0 | SPI_CR2_DS_1 | SPI_CR2_DS_2;
+
+    // set ssm and ssi bits
+    SPI1->CR1 |= SPI_CR1_SSM;
+    SPI1->CR1 |= SPI_CR1_SSI;
+
+    // enable spi channel
+    SPI1->CR1 |= SPI_CR1_SPE;
 }
+
+
+
+//---------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
 
 // Set the CS pin low if val is non-zero.
 // Note that when CS is being set high again, wait on SPI to not be busy.
@@ -86,7 +114,7 @@ static void tft_reg_select(int val)
 //============================================================================
 // Wait for n nanoseconds. (Maximum: 4.294 seconds)
 //============================================================================
-void nano_wait(unsigned int n) {
+static inline void nano_wait(unsigned int n) {
     asm(    "        mov r0,%0\n"
             "repeat: sub r0,#83\n"
             "        bgt repeat\n" : : "r"(n) : "r0", "cc");
@@ -165,42 +193,42 @@ void LCD_WriteData16_End()
 // Write to an LCD "register"
 void LCD_WR_REG(uint8_t data)
 {
-    while((SPI1->SR & SPI_SR_BSY) != 0)
+    while((SPI->SR & SPI_SR_BSY) != 0)
         ;
     // Don't clear RS until the previous operation is done.
     lcddev.reg_select(1);
-    *((uint8_t*)&SPI1->DR) = data;
+    *((uint8_t*)&SPI->DR) = data;
 }
 
 // Write 8-bit data to the LCD
 void LCD_WR_DATA(uint8_t data)
 {
-    while((SPI1->SR & SPI_SR_BSY) != 0)
+    while((SPI->SR & SPI_SR_BSY) != 0)
         ;
     // Don't set RS until the previous operation is done.
     lcddev.reg_select(0);
-    *((uint8_t*)&SPI1->DR) = data;
+    *((uint8_t*)&SPI->DR) = data;
 }
 
 // Prepare to write 16-bit data to the LCD
 void LCD_WriteData16_Prepare()
 {
     lcddev.reg_select(0);
-    SPI1->CR2 |= SPI_CR2_DS;
+    SPI->CR2 |= SPI_CR2_DS;
 }
 
 // Write 16-bit data
 void LCD_WriteData16(u16 data)
 {
-    while((SPI1->SR & SPI_SR_TXE) == 0)
+    while((SPI->SR & SPI_SR_TXE) == 0)
         ;
-    SPI1->DR = data;
+    SPI->DR = data;
 }
 
 // Finish writing 16-bit data
 void LCD_WriteData16_End()
 {
-    SPI1->CR2 &= ~SPI_CR2_DS; // bad value forces it back to 8-bit mode
+    SPI->CR2 &= ~SPI_CR2_DS; // bad value forces it back to 8-bit mode
 }
 #endif /* not SLOW_SPI */
 
@@ -398,6 +426,7 @@ void LCD_SetWindow(uint16_t xStart, uint16_t yStart, uint16_t xEnd, uint16_t yEn
 //===========================================================================
 // Set the entire display to one color
 //===========================================================================
+
 void LCD_Clear(u16 Color)
 {
     lcddev.select(1);

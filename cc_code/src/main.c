@@ -20,6 +20,7 @@
 int main(void)
 {
 	setup_spi1();
+	setup_spi2();
 	setup_t_irq();
 	LCD_Init(0,0,0);
 	LCD_Clear(BLACK);
