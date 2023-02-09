@@ -11,6 +11,28 @@
 #define SPI SPI1
 
 void nano_wait(unsigned int);
+// The LCD device structure definition.
+//
+typedef struct
+{
+    uint16_t width;
+    uint16_t height;
+    uint16_t id;
+    uint8_t  dir;
+    uint16_t  wramcmd;
+    uint16_t  setxcmd;
+    uint16_t  setycmd;
+    void (*reset)(int);
+    void (*select)(int);
+    void (*reg_select)(int);
+} lcd_dev_t;
+
+// The LCD device.
+// This will be initialized by LCD_direction() so that the
+// width and height will be appropriate for the rotation.
+// The setxcmd and setycmd will be set so that cursor selection
+// is defined properly for the rotation.
+extern lcd_dev_t lcddev;
 
 // display's chip select: PB8
 #define CS_NUM  8
@@ -57,6 +79,26 @@ void nano_wait(unsigned int);
 #define LCD_H 480
 
 // RA9885-specific commands
+/*
+// initialization
+#define RA8875_PLLC1 0x88
+#define RA8875_PLLC2 0x89
+#define RA8875_PLLC1_PLLDIV1 0x00
+#define RA8875_PLLC2_DIV4 0x02
+#define RA8875_SYSR  0x10
+#define RA8875_SYSR_16BPP 0x0c
+#define RA8875_SYSR_MCU8  0x00
+#define RA8875_PCSR_PDATL 0x80
+#define RA8875_PCSR_2CLK  0x01
+#define RA8875_PCSR 0x04
+// horizontal settings
+#define RA8875_HDWR   0x14
+#define RA8875_HNDFTR 0x15
+#define RA8875_HNDFTR_DE_HIGH 0x00
+#define RA8875_HNDR 0x16
+#define RA8875_HSTR 0x17
+*/
+// display
 #define DISPLAY    0x90
 #define FILLED     0xB0
 // RA8775's commands to set initial xcoord, sent in 2 packets of 8-bit messages
@@ -76,8 +118,21 @@ void nano_wait(unsigned int);
 #define SET_COL_5  0x64
 #define SET_COL_11 0x63
 
+#define BLACK 0x0000   ///< Black Color
+#define BLUE 0x001F    ///< Blue Color
+#define RED 0xF800     ///< Red Color
+#define GREEN 0x07E0   ///< Green Color
+#define CYAN 0x07FF    ///< Cyan Color
+#define MAGENTA 0xF81F ///< Magenta Color
+#define YELLOW 0xFFE0  ///< Yellow Color
+#define WHITE 0xFFFF   ///< White Color
+
 void setup_spi1();
-static void tft_select(int val);
+void setup_t_irq();
+void LCD_Init();
+//static void tft_select(int val);
+
+void fillScreen(uint16_t color);
 void drawRect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color, int filled);
 
 uint16_t applyRotationX(uint16_t x);

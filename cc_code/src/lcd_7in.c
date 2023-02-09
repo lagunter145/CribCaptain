@@ -8,6 +8,7 @@
 #include "stm32f0xx.h"
 #include <stdint.h>
 #include "lcd_7in.h"
+#include "RA8775_commands.h"
 
 lcd_dev_t lcddev;
 
@@ -41,6 +42,53 @@ void setup_spi1() {
 	SPI1->CR1 |= SPI_CR1_SPE; // enable spi1
 }
 
+// taken from A.6.2 (pg. 944)
+void setup_t_irq(void) {
+	// enable RCC clock to GPIO A Ports
+	RCC->AHBENR |= RCC_AHBENR_GPIOAEN;
+	// Select Port A for pin 0 external interrupt by writing 0000 in EXTI0
+	SYSCFG->EXTICR[1] &= (uint16_t)~SYSCFG_EXTICR1_EXTI0_PA;
+	// Configure corresponding mask bit in the EXTI_IMR register (EXTI_IMR_MR0 = 0x0001)
+	// Writing 1 to corresponding mask bit in EXTI_IMR means "Interrupt request from Line x(0) is not masked"
+	// I think PA0 is on line 0 for EXTI0 (figure 25 on pg. 222)
+	EXTI->IMR = EXTI_IMR_MR0;
+	// Configure the Trigger Selection bits of the Interrupt line on rising edge (EXTI_RTSR_TR0 = 0x0001)
+	// Writing 1 to corresponding mask bit in EXTI_RTSR means "Rising trigger enabled (for Event and Interrupt) for input line"
+	//EXTI->RTSR = EXTI_RTSR_TR0;
+	// Configure the Trigger Selection bits of the Interrupt line on falling edge (EXTI_FTSR_TR0 = 0x0001)
+	// Writing 1 to corresponding mask bit in EXTI_FTSR means "Falling trigger enabled (for Event and Interrupt) for input line"
+	EXTI->FTSR = EXTI_FTSR_TR0;
+	// Configure NVIC for External Interrupt
+	// Enable Interrupt on EXTI0_1
+	NVIC_EnableIRQ(EXTI0_1_IRQn);
+	// Set priority for EXTI0_1
+	NVIC_SetPriority(EXTI0_1_IRQn, 0);
+}
+
+// taken from (https://controllerstech.com/external-interrupt-using-registers/)
+// will print the x and y coords to terminal if touched
+void EXTI0_1_IRQHandler (void) {
+	// check the pin which triggered the interrupt
+	if((EXTI->PR & EXTI_PR_PR0) == EXTI_PR_PR0){
+		//char xString[80] = "X:";
+		//char yString[80] = "Y:";
+		// acknowledges the interrupt by writing a 1 to the register
+		//LCD_Clear(BLACK);
+		fillScreen(RED);
+		uint16_t x, y;
+		//(&x, &y);
+		//strcat(xString, itoa(x, xString, 10));
+		//LCD_DrawString(140,(80),  WHITE, BLACK, itoa(x, xString, 10), 16, 1);
+		//strcat(yString, itoa(y, yString, 10));
+		//LCD_DrawString(140,(80 + (16)),  WHITE, BLACK, itoa(y, yString, 10), 16, 1);
+		nano_wait(300000000); //REPLACE WITH A ONE SHOT TIMER
+		if((EXTI->PR & EXTI_PR_PR0) == EXTI_PR_PR0){
+			EXTI->PR |= EXTI_PR_PR0;
+	    }
+		//times_touched++;
+	}
+}
+
 // Set the CS pin low if val is non-zero.
 // Note that when CS is being set high again, wait on SPI to not be busy.
 static void tft_select(int val)
@@ -69,7 +117,7 @@ void LCD_WR_REG(uint8_t data)
     while((SPI->SR & SPI_SR_BSY) != 0)
         ;
     // Don't clear RS until the previous operation is done.
-    lcddev.reg_select(1);
+    //lcddev.reg_select(1);
     *((uint8_t*)&SPI->DR) = data;
 }
 
@@ -79,7 +127,7 @@ void LCD_WR_DATA(uint8_t data)
     while((SPI->SR & SPI_SR_BSY) != 0)
         ;
     // Don't set RS until the previous operation is done.
-    lcddev.reg_select(0);
+    //lcddev.reg_select(0);
     *((uint8_t*)&SPI->DR) = data;
 }
 
@@ -91,7 +139,7 @@ void LCD_WriteData16_Prepare()
 }
 
 // Write 16-bit data
-void LCD_WriteData16(u16 data)
+void LCD_WriteData16(uint16_t data)
 {
     while((SPI->SR & SPI_SR_TXE) == 0)
         ;
@@ -104,6 +152,82 @@ void LCD_WriteData16_End()
     SPI->CR2 &= ~SPI_CR2_DS; // bad value forces it back to 8-bit mode
 }
 
+void  writeReg(uint8_t reg, uint8_t val) {
+	// specify to RA8775 what register to write to
+	LCD_WR_REG(reg);
+	// writes the data to the register
+	LCD_WR_DATA(val);
+}
+
+void nano_wait(unsigned int n) {
+    asm(    "        mov r0,%0\n"
+            "repeat: sub r0,#83\n"
+            "        bgt repeat\n" : : "r"(n) : "r0", "cc");
+}
+
+void LCD_Init() {
+	// setup for SPI in code, might not be needed since SPI already setup another way
+//	CS_HIGH;
+//	RESET_LOW;
+//	nano_wait(100);
+//	RESET_HIGH;
+//	nano_wait(100);
+
+	// initialize()
+	// PLLinit()
+	// size == 800x480
+	writeReg(RA8875_PLLC1, (RA8875_PLLC1_PLLDIV1  + 11));
+	nano_wait(1);
+	writeReg(RA8875_PLLC2, RA8875_PLLC2_DIV4);
+	nano_wait(1);
+	// out of PLLinit()
+	writeReg(RA8875_SYSR, (RA8875_SYSR_16BPP | RA8875_SYSR_MCU8));
+	// if size==800x480
+	// Setting Timing Values
+	uint8_t pixclk = (RA8875_PCSR_PDATL | RA8875_PCSR_2CLK);
+	uint8_t hsync_start = 32;
+	uint8_t hsync_pw = 96;
+	uint8_t hsync_finetune = 0;
+	uint8_t hsync_nondisp = 26;
+	uint8_t vsync_pw = 2;
+	uint16_t vsync_nondisp = 32;
+	uint16_t vsync_start = 23;
+	uint8_t voffset = 0;
+
+	writeReg(RA8875_PCSR, pixclk);
+	nano_wait(1);
+
+	// Horizontal settings registers
+	writeReg(RA8875_HDWR, (LCD_W / 8) - 1);
+	writeReg(RA8875_HNDFTR, (RA8875_HNDFTR_DE_HIGH + hsync_finetune));
+	writeReg(RA8875_HNDR, ((hsync_nondisp - hsync_finetune - 2) / 8));
+	writeReg(RA8875_HSTR, ((hsync_start / 8) - 1));
+	writeReg(RA8875_HPWR, (RA8875_HPWR_LOW + (hsync_pw / 8 - 1)));
+
+	// Vertical settings registers
+	writeReg(RA8875_VDHR0, (uint16_t)(LCD_H - 1 + voffset) & 0xFF);
+	writeReg(RA8875_VDHR1, (uint16_t)(LCD_H - 1 + voffset) >> 8);
+	writeReg(RA8875_VNDR0, vsync_nondisp - 1);
+	writeReg(RA8875_VNDR1, vsync_nondisp >> 8);
+	writeReg(RA8875_VSTR0, vsync_start - 1);
+	writeReg(RA8875_VSTR1, vsync_start >> 8);
+	writeReg(RA8875_VPWR, (RA8875_VPWR_LOW + vsync_pw - 1));
+
+	// Set active window X
+	writeReg(RA8875_HSAW0, 0);
+	writeReg(RA8875_HSAW1, 0);
+	writeReg(RA8875_HEAW0, (uint16_t)(LCD_W - 1) & 0xFF);
+	writeReg(RA8875_HEAW1, (uint16_t)(LCD_W - 1) >> 8);
+
+	// Set active window Y
+	writeReg(RA8875_VSAW0, 0 + voffset);
+	writeReg(RA8875_VSAW1, 0 + voffset);
+	writeReg(RA8875_VEAW0, (uint16_t)(LCD_H - 1 + voffset) & 0xFF);
+	writeReg(RA8875_VEAW1, (uint16_t)(LCD_H - 1 + voffset) >> 8);
+
+	writeReg(RA8875_MCLR, RA8875_MCLR_START | RA8875_MCLR_FULL);
+	nano_wait(500);
+}
 
 // DRAWING FUNCTIONS
 void fillScreen(uint16_t color) {
