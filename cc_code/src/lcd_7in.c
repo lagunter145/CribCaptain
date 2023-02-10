@@ -295,11 +295,11 @@ void drawRect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color, in
 	LCD_WR_DATA((color & 0xf800) >> 11);
 
 	// Display on screen
-	LCD_WR_REG(DISPLAY);
+	LCD_WR_REG(RA8875_DCR);
 	if (filled) {
-		LCD_WR_DATA(FILLED);
+		LCD_WR_DATA(0xB0);
 	} else {
-		LCD_WR_DATA(DISPLAY);
+		LCD_WR_DATA(0x90);
 	}
 
 	// need to wait
