@@ -1,4 +1,4 @@
-20171033954725899
+20176062405891288
 Audio_Module
 Reverb_BTDR-1H
 Digital Reverberation Unit, http://www.belton.co.kr/inc/downfile.php?seq=17&file=pdf (footprint from http://www.uk-electronic.de/PDF/BTDR-1.pdf)
@@ -85666,12 +85666,33 @@ imported_footprints
 8
 8
 imported_footprints
+5-3.3_buck_converter
+
+
+0
+3
+3
+imported_footprints
+7.5Vdc-5Vdc_buck_converter
+
+
+0
+4
+4
+imported_footprints
 DIO_1N5822
 
 
 0
 2
 2
+imported_footprints
+LM393
+<b>Small Outline Package</b> Fits JEDEC packages (narrow SOIC-8)
+
+0
+8
+8
 imported_footprints
 Micro_SD_card_reader
 
