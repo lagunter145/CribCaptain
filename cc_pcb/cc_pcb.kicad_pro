@@ -367,8 +367,8 @@
       "idf": "",
       "netlist": "cc_pcb.net",
       "specctra_dsn": "",
-      "step": "",
-      "vrml": ""
+      "step": "cc_pcb.step",
+      "vrml": "cc_pcb.wrl"
     },
     "page_layout_descr_file": ""
   },

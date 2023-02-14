@@ -6661,7 +6661,7 @@
       (reference "J3") (unit 1) (value "Controller (40Pin->SPI)") (footprint "imported_footprints:RA8875_TFT_Breakout")
     )
     (path "/c41901fa-1220-42a8-b383-4fa632dcfa9d"
-      (reference "J4") (unit 1) (value "RFID Scanner") (footprint "imported_footprints:RFID_Reader")
+      (reference "J4") (unit 1) (value "RFID Scanner") (footprint "imported_footprints:RFID_Reader_PCB")
     )
     (path "/4bb0dd11-0df7-4003-a1fd-acea829ba322"
       (reference "J5") (unit 1) (value "4x4 Keypad") (footprint "imported_footprints:4x4_keypad")

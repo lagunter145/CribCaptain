@@ -1,7 +1,7 @@
 (export (version "E")
   (design
     (source "C:\\Users\\Lauren\\Documents\\due_spring23\\ece477\\CribCaptain\\cc_pcb\\cc_pcb.kicad_sch")
-    (date "2/11/2023 4:58:02 PM")
+    (date "2/11/2023 5:38:08 PM")
     (tool "Eeschema (6.0.4)")
     (sheet (number "1") (name "/") (tstamps "/")
       (title_block
@@ -261,7 +261,7 @@
       (tstamps "0ea68b70-9ad7-4a33-a1a2-fc0a4a1315b6"))
     (comp (ref "J4")
       (value "RFID Scanner")
-      (footprint "imported_footprints:RFID_Reader")
+      (footprint "imported_footprints:RFID_Reader_PCB")
       (libsource (lib "Connector") (part "Conn_01x04_Female") (description "Generic connector, single row, 01x04, script generated (kicad-library-utils/schlib/autogen/connector/)"))
       (property (name "Sheetname") (value ""))
       (property (name "Sheetfile") (value "cc_pcb.kicad_sch"))
