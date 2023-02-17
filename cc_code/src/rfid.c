@@ -356,6 +356,24 @@ uint32_t getFirmwareVersion(void)
 
 /**************************************************************************/
 /*!
+    @brief  Configures the SAM (Secure Access Module)
+*/
+/**************************************************************************/
+int SAMConfig(void)
+{
+    pn532_packetbuffer[0] = PN532_COMMAND_SAMCONFIGURATION;
+    pn532_packetbuffer[1] = 0x01; // normal mode;
+    pn532_packetbuffer[2] = 0x64; // timeout 50ms * 20 = 1 second
+    pn532_packetbuffer[3] = 0x01; // use IRQ pin!
+
+    if (writeCommand(pn532_packetbuffer, 4, NULL, 0))
+        return 0;
+
+    return (0 < readResponse(pn532_packetbuffer, 64, 0));
+}
+
+/**************************************************************************/
+/*!
     Waits for an ISO14443A target to enter the field
     @param  cardBaudRate  Baud rate of the card
     @param  uid           Pointer to the array that will be populated
@@ -376,7 +394,7 @@ int readPassiveTargetID(uint8_t cardbaudrate, uint8_t *uid, uint8_t *uidLength, 
     }
 
     // read data packet
-    if (readResponse(pn532_packetbuffer, sizeof(pn532_packetbuffer), 0) < 0) {
+    if (readResponse(pn532_packetbuffer, 64, 0) < 0) {
         return 0x0;
     }
 

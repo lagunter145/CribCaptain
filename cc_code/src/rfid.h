@@ -27,6 +27,7 @@ uint32_t readRegister(uint16_t reg);
 uint32_t writeRegister(uint16_t reg, uint8_t val);
 
 uint32_t getFirmwareVersion(void);
+int SAMConfig(void);
 int readPassiveTargetID(uint8_t cardbaudrate, uint8_t *uid, uint8_t *uidLength, uint16_t timeout);
 
 // Command Codes
