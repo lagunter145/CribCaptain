@@ -9,7 +9,7 @@
 #define LCD_7IN_H_
 
 #define SPI SPI1
-
+#include "RA8775_commands.h"
 void nano_wait(unsigned int);
 // The LCD device structure definition.
 //
@@ -130,12 +130,18 @@ extern lcd_dev_t lcddev;
 void setup_spi1();
 void setup_t_irq();
 void LCD_Init();
+void spi1_fast();
 //static void tft_select(int val);
-
+uint8_t LCD_RD_REG(uint8_t reg);
+uint8_t readData();
 void fillScreen(uint16_t color);
 void drawRect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color, int filled);
 
 uint16_t applyRotationX(uint16_t x);
 uint16_t applyRotationY(uint16_t y);
 
+void displayOn(int on);
+void GPIOX(int on);
+void PWM1out(uint8_t p);
+void PWM1config(int on, uint8_t clock);
 #endif /* LCD_7IN_H_ */

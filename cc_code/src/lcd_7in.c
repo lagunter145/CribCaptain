@@ -16,6 +16,7 @@ lcd_dev_t lcddev;
 
 // setup GPIOB pins for display and setup spi1 to interface with the display
 void setup_spi1() {
+	uint8_t temp;
 	// enable RCC clock to GPIO B Ports
 	RCC->AHBENR |= RCC_AHBENR_GPIOBEN;
 	//clear and set the MODER values for PB8,9,11,14 for outputs (01 in MODER)
@@ -30,15 +31,33 @@ void setup_spi1() {
 	// sets the AFR values for PB3,4,5 as 0000 to set them as alternative functions for SPI1
 	GPIOB->AFR[0] &= ~(GPIO_AFRL_AFR3 | GPIO_AFRL_AFR4 | GPIO_AFRL_AFR5);
 
+	/********* TESTING RANDOM CONTROL REGISTER STUFF *********/
+	//GPIOB->PUPDR |= GPIO_PUPDR_PUPDR3_1;
+	//RCC->AHBENR |= RCC_AHBENR_GPIOAEN;
+	//GPIOA->MODER &= ~(GPIO_MODER_MODER15);
+	//GPIOA->MODER |= GPIO_MODER_MODER15_1;
+	//GPIOA->AFR[1] &= ~(GPIO_AFRH_AFR15);
+
 	// full duplex SPI peripheral
 	RCC->APB2ENR |= RCC_APB2ENR_SPI1EN; // enables RCC clock to SPI1
 	// spi1_cr1 config
 	SPI1->CR1 &= ~(SPI_CR1_SPE); // disable spi enable pin so that spi can be configured
 	SPI1->CR1 |= SPI_CR1_MSTR; // configure spi for master mode
 	SPI1->CR1 &= ~(SPI_CR1_BR); // baud rate set high as possible (SCK divisor is as small as possible)
+	SPI1->CR1 |= 0x38;
 	SPI1->CR1 |= (SPI_CR1_SSI | SPI_CR1_SSM); // set SSM(software slave management)/SSI(internal slave select) for SPI1
+	//SPI1->CR2 |= SPI_CR2_NSSP | SPI_CR2_SSOE;
 	SPI1->CR2 &= ~(SPI_CR2_DS); // clears what was set for word size
 	SPI1->CR2 |= (SPI_CR2_DS_0 | SPI_CR2_DS_1 | SPI_CR2_DS_2); // sets word size to 8 bits
+	SPI1->CR1 |= SPI_CR1_SPE; // enable spi1
+}
+
+// function to set SPI baud rate to fpclk/16
+void spi1_fast()
+{
+	SPI1->CR1 &= ~(SPI_CR1_SPE); // disable spi enable pin so that spi can be configured
+	SPI1->CR1 &= ~(SPI_CR1_BR); // baud rate set high as possible (SCK divisor is as small as possible)
+	SPI1->CR1 |= 0x18;
 	SPI1->CR1 |= SPI_CR1_SPE; // enable spi1
 }
 
@@ -111,24 +130,79 @@ static void tft_select(int val)
     }
 }
 
-// Write to an LCD "register"
+// Write command to the LCD
 void LCD_WR_REG(uint8_t data)
 {
-    while((SPI->SR & SPI_SR_BSY) != 0)
+	uint8_t temp;
+	while((SPI->SR & SPI_SR_BSY) != 0)
+		;
+	CS_LOW;
+	// Don't clear RS until the previous operation is done.
+	*((uint8_t*)&SPI->DR) = RA8875_CMDWRITE;
+
+	while((SPI->SR & SPI_SR_BSY) != 0)
         ;
+
     // Don't clear RS until the previous operation is done.
     //lcddev.reg_select(1);
     *((uint8_t*)&SPI->DR) = data;
+    while((SPI->SR & SPI_SR_BSY) != 0)
+                ;
+
+    CS_HIGH;
 }
 
 // Write 8-bit data to the LCD
 void LCD_WR_DATA(uint8_t data)
 {
-    while((SPI->SR & SPI_SR_BSY) != 0)
+	while((SPI->SR & SPI_SR_BSY) != 0)
+		;
+	CS_LOW;
+	// Don't clear RS until the previous operation is done.
+	*((uint8_t*)&SPI->DR) = RA8875_DATAWRITE;
+
+	while((SPI->SR & SPI_SR_BSY) != 0)
         ;
+
     // Don't set RS until the previous operation is done.
     //lcddev.reg_select(0);
     *((uint8_t*)&SPI->DR) = data;
+    while((SPI->SR & SPI_SR_BSY) != 0)
+            ;
+
+    CS_HIGH;
+}
+
+uint8_t LCD_RD_REG(uint8_t reg)
+{
+	LCD_WR_REG(reg);
+	return readData();
+}
+
+//// FOR NOW READDATA JUST RETURNS 1 ////
+uint8_t readData()
+{
+	uint8_t read;
+	while((SPI->SR & SPI_SR_BSY) != 0)
+			;
+	CS_LOW;
+	// Don't clear RS until the previous operation is done.
+	*((uint8_t*)&SPI->DR) = RA8875_DATAREAD;
+
+	while((SPI->SR & SPI_SR_BSY) != 0)
+		;
+	*((uint8_t*)&SPI->DR) = 0x0;
+
+	while((SPI->SR & SPI_SR_BSY) != 0)
+		;
+
+	while((SPI->SR & SPI_SR_RXNE)==0)
+		;
+	while((SPI->SR & SPI_SR_RXNE))
+		read = SPI->DR;
+
+	CS_HIGH;
+	return read;
 }
 
 // Prepare to write 16-bit data to the LCD
@@ -167,19 +241,19 @@ void nano_wait(unsigned int n) {
 
 void LCD_Init() {
 	// setup for SPI in code, might not be needed since SPI already setup another way
-//	CS_HIGH;
-//	RESET_LOW;
-//	nano_wait(100);
-//	RESET_HIGH;
-//	nano_wait(100);
+	CS_HIGH;
+	RESET_LOW;
+	nano_wait(100000000);
+	RESET_HIGH;
+	nano_wait(100000000);
 
 	// initialize()
 	// PLLinit()
 	// size == 800x480
 	writeReg(RA8875_PLLC1, (RA8875_PLLC1_PLLDIV1  + 11));
-	nano_wait(1);
+	nano_wait(1000000);	// need to delay 1 ms
 	writeReg(RA8875_PLLC2, RA8875_PLLC2_DIV4);
-	nano_wait(1);
+	nano_wait(1000000);
 	// out of PLLinit()
 	writeReg(RA8875_SYSR, (RA8875_SYSR_16BPP | RA8875_SYSR_MCU8));
 	// if size==800x480
@@ -195,7 +269,7 @@ void LCD_Init() {
 	uint8_t voffset = 0;
 
 	writeReg(RA8875_PCSR, pixclk);
-	nano_wait(1);
+	nano_wait(1000000);
 
 	// Horizontal settings registers
 	writeReg(RA8875_HDWR, (LCD_W / 8) - 1);
@@ -226,7 +300,10 @@ void LCD_Init() {
 	writeReg(RA8875_VEAW1, (uint16_t)(LCD_H - 1 + voffset) >> 8);
 
 	writeReg(RA8875_MCLR, RA8875_MCLR_START | RA8875_MCLR_FULL);
-	nano_wait(500);
+	nano_wait(500000000);
+
+	// set SPI speed back to fast
+	spi1_fast();
 }
 
 // DRAWING FUNCTIONS
@@ -311,4 +388,30 @@ uint16_t applyRotationX(uint16_t x) {
 
 uint16_t applyRotationY(uint16_t y) {
 	return y;
+}
+
+void displayOn(int on) {
+  if (on)
+    writeReg(RA8875_PWRR, RA8875_PWRR_NORMAL | RA8875_PWRR_DISPON);
+  else
+    writeReg(RA8875_PWRR, RA8875_PWRR_NORMAL | RA8875_PWRR_DISPOFF);
+}
+
+void GPIOX(int on){
+ if (on)
+	writeReg(RA8875_GPIOX, 1);
+  else
+	writeReg(RA8875_GPIOX, 0);
+}
+
+void PWM1out(uint8_t p){
+	writeReg(RA8875_P1DCR, p);
+}
+
+void PWM1config(int on, uint8_t clock) {
+  if (on) {
+    writeReg(RA8875_P1CR, RA8875_P1CR_ENABLE | (clock & 0xF));
+  } else {
+    writeReg(RA8875_P1CR, RA8875_P1CR_DISABLE | (clock & 0xF));
+  }
 }
