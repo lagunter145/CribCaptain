@@ -16,7 +16,6 @@ lcd_dev_t lcddev;
 
 // setup GPIOB pins for display and setup spi1 to interface with the display
 void setup_spi1() {
-	uint8_t temp;
 	// enable RCC clock to GPIO B Ports
 	RCC->AHBENR |= RCC_AHBENR_GPIOBEN;
 	//clear and set the MODER values for PB8,9,11,14 for outputs (01 in MODER)
@@ -49,6 +48,7 @@ void setup_spi1() {
 	//SPI1->CR2 |= SPI_CR2_NSSP | SPI_CR2_SSOE;
 	SPI1->CR2 &= ~(SPI_CR2_DS); // clears what was set for word size
 	SPI1->CR2 |= (SPI_CR2_DS_0 | SPI_CR2_DS_1 | SPI_CR2_DS_2); // sets word size to 8 bits
+	SPI1->CR2 |= SPI_CR2_FRXTH; // set RXFIFO threshold to 8 bits
 	SPI1->CR1 |= SPI_CR1_SPE; // enable spi1
 }
 
@@ -130,8 +130,22 @@ static void tft_select(int val)
     }
 }
 
+// Transfers a byte over SPI. Does not control NSSP
+uint8_t transByte(uint8_t d)
+{
+    uint8_t rec;
+    // writes data to DR to transmit
+    while((SPI->SR & SPI_SR_BSY) != 0)
+        ;
+    *((uint8_t*)&SPI->DR) = d;
+    // read back from RXFIFO
+    while((SPI->SR & SPI_SR_RXNE) == 0)
+        ;
+    rec = SPI->DR;
+    return rec;
+}
 // Write command to the LCD
-void LCD_WR_REG(uint8_t data)
+/*void LCD_WR_REG(uint8_t data)
 {
 	uint8_t temp;
 	while((SPI->SR & SPI_SR_BSY) != 0)
@@ -150,10 +164,17 @@ void LCD_WR_REG(uint8_t data)
                 ;
 
     CS_HIGH;
+}*/
+void LCD_WR_REG(uint8_t data)
+{
+    CS_LOW;
+    transByte(RA8875_CMDWRITE);
+    transByte(data);
+    CS_HIGH;
 }
 
 // Write 8-bit data to the LCD
-void LCD_WR_DATA(uint8_t data)
+/*void LCD_WR_DATA(uint8_t data)
 {
 	while((SPI->SR & SPI_SR_BSY) != 0)
 		;
@@ -171,6 +192,13 @@ void LCD_WR_DATA(uint8_t data)
             ;
 
     CS_HIGH;
+}*/
+void LCD_WR_DATA(uint8_t data)
+{
+    CS_LOW;
+    transByte(RA8875_DATAWRITE);
+    transByte(data);
+    CS_HIGH;
 }
 
 uint8_t LCD_RD_REG(uint8_t reg)
@@ -180,31 +208,35 @@ uint8_t LCD_RD_REG(uint8_t reg)
 }
 
 //// FOR NOW READDATA JUST RETURNS 1 ////
-uint8_t readData()
+/*uint8_t readData()
 {
 	uint8_t read;
-	while((SPI->SR & SPI_SR_BSY) != 0)
-			;
 	CS_LOW;
-	// Don't clear RS until the previous operation is done.
-	*((uint8_t*)&SPI->DR) = RA8875_DATAREAD;
-
-	while((SPI->SR & SPI_SR_BSY) != 0)
-		;
-	*((uint8_t*)&SPI->DR) = 0x0;
-
-	while((SPI->SR & SPI_SR_BSY) != 0)
-		;
-
-	while((SPI->SR & SPI_SR_RXNE)==0)
-		;
-	while((SPI->SR & SPI_SR_RXNE))
-		read = SPI->DR;
-
+	transByte(RA8875_DATAREAD);
+	read = transByte(0x0);
 	CS_HIGH;
 	return read;
+}*/
+uint8_t readData()
+{
+    uint8_t read;
+    while((SPI->SR & SPI_SR_BSY) != 0)
+            ;
+    CS_LOW;
+    // Don't clear RS until the previous operation is done.
+    *((uint8_t*)&SPI->DR) = RA8875_DATAREAD;
+    while((SPI->SR & SPI_SR_BSY) != 0)
+        ;
+    *((uint8_t*)&SPI->DR) = 0x0;
+    while((SPI->SR & SPI_SR_BSY) != 0)
+        ;
+    while((SPI->SR & SPI_SR_RXNE)==0)
+        ;
+    while((SPI->SR & SPI_SR_RXNE))
+        read = SPI->DR;
+    CS_HIGH;
+    return read;
 }
-
 // Prepare to write 16-bit data to the LCD
 void LCD_WriteData16_Prepare()
 {

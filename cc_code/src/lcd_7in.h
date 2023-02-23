@@ -132,6 +132,7 @@ void setup_t_irq();
 void LCD_Init();
 void spi1_fast();
 //static void tft_select(int val);
+uint8_t transByte(uint8_t d);
 uint8_t LCD_RD_REG(uint8_t reg);
 uint8_t readData();
 void fillScreen(uint16_t color);
