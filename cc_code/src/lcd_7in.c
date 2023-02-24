@@ -30,22 +30,14 @@ void setup_spi1() {
 	// sets the AFR values for PB3,4,5 as 0000 to set them as alternative functions for SPI1
 	GPIOB->AFR[0] &= ~(GPIO_AFRL_AFR3 | GPIO_AFRL_AFR4 | GPIO_AFRL_AFR5);
 
-	/********* TESTING RANDOM CONTROL REGISTER STUFF *********/
-	//GPIOB->PUPDR |= GPIO_PUPDR_PUPDR3_1;
-	//RCC->AHBENR |= RCC_AHBENR_GPIOAEN;
-	//GPIOA->MODER &= ~(GPIO_MODER_MODER15);
-	//GPIOA->MODER |= GPIO_MODER_MODER15_1;
-	//GPIOA->AFR[1] &= ~(GPIO_AFRH_AFR15);
-
 	// full duplex SPI peripheral
 	RCC->APB2ENR |= RCC_APB2ENR_SPI1EN; // enables RCC clock to SPI1
 	// spi1_cr1 config
 	SPI1->CR1 &= ~(SPI_CR1_SPE); // disable spi enable pin so that spi can be configured
 	SPI1->CR1 |= SPI_CR1_MSTR; // configure spi for master mode
-	SPI1->CR1 &= ~(SPI_CR1_BR); // baud rate set high as possible (SCK divisor is as small as possible)
+	SPI1->CR1 &= ~(SPI_CR1_BR); // baud rate set to fpclk/256 (slowest)
 	SPI1->CR1 |= 0x38;
 	SPI1->CR1 |= (SPI_CR1_SSI | SPI_CR1_SSM); // set SSM(software slave management)/SSI(internal slave select) for SPI1
-	//SPI1->CR2 |= SPI_CR2_NSSP | SPI_CR2_SSOE;
 	SPI1->CR2 &= ~(SPI_CR2_DS); // clears what was set for word size
 	SPI1->CR2 |= (SPI_CR2_DS_0 | SPI_CR2_DS_1 | SPI_CR2_DS_2); // sets word size to 8 bits
 	SPI1->CR2 |= SPI_CR2_FRXTH; // set RXFIFO threshold to 8 bits
@@ -56,7 +48,7 @@ void setup_spi1() {
 void spi1_fast()
 {
 	SPI1->CR1 &= ~(SPI_CR1_SPE); // disable spi enable pin so that spi can be configured
-	SPI1->CR1 &= ~(SPI_CR1_BR); // baud rate set high as possible (SCK divisor is as small as possible)
+	SPI1->CR1 &= ~(SPI_CR1_BR); // baud rate set to fpclk/16 (~3.2 MHz)
 	SPI1->CR1 |= 0x18;
 	SPI1->CR1 |= SPI_CR1_SPE; // enable spi1
 }
@@ -108,27 +100,6 @@ void EXTI0_1_IRQHandler (void) {
 	}
 }
 
-// Set the CS pin low if val is non-zero.
-// Note that when CS is being set high again, wait on SPI to not be busy.
-static void tft_select(int val)
-{
-    if (val == 0) {
-        while(SPI1->SR & SPI_SR_BSY)
-            ;
-        CS_HIGH;
-    } else {
-        while((GPIOB->ODR & (CS_BIT)) == 0) {
-            ; // If CS is already low, this is an error.  Loop forever.
-            // This has happened because something called a drawing subroutine
-            // while one was already in process.  For instance, the main()
-            // subroutine could call a long-running LCD_DrawABC function,
-            // and an ISR interrupts it and calls another LCD_DrawXYZ function.
-            // This is a common mistake made by students.
-            // This is what catches the problem early.
-        }
-        CS_LOW;
-    }
-}
 
 // Transfers a byte over SPI. Does not control NSSP
 uint8_t transByte(uint8_t d)
@@ -138,33 +109,16 @@ uint8_t transByte(uint8_t d)
     while((SPI->SR & SPI_SR_BSY) != 0)
         ;
     *((uint8_t*)&SPI->DR) = d;
+    while((SPI->SR & SPI_SR_BSY) != 0)
+        ;
     // read back from RXFIFO
     while((SPI->SR & SPI_SR_RXNE) == 0)
         ;
     rec = SPI->DR;
     return rec;
 }
+
 // Write command to the LCD
-/*void LCD_WR_REG(uint8_t data)
-{
-	uint8_t temp;
-	while((SPI->SR & SPI_SR_BSY) != 0)
-		;
-	CS_LOW;
-	// Don't clear RS until the previous operation is done.
-	*((uint8_t*)&SPI->DR) = RA8875_CMDWRITE;
-
-	while((SPI->SR & SPI_SR_BSY) != 0)
-        ;
-
-    // Don't clear RS until the previous operation is done.
-    //lcddev.reg_select(1);
-    *((uint8_t*)&SPI->DR) = data;
-    while((SPI->SR & SPI_SR_BSY) != 0)
-                ;
-
-    CS_HIGH;
-}*/
 void LCD_WR_REG(uint8_t data)
 {
     CS_LOW;
@@ -174,25 +128,6 @@ void LCD_WR_REG(uint8_t data)
 }
 
 // Write 8-bit data to the LCD
-/*void LCD_WR_DATA(uint8_t data)
-{
-	while((SPI->SR & SPI_SR_BSY) != 0)
-		;
-	CS_LOW;
-	// Don't clear RS until the previous operation is done.
-	*((uint8_t*)&SPI->DR) = RA8875_DATAWRITE;
-
-	while((SPI->SR & SPI_SR_BSY) != 0)
-        ;
-
-    // Don't set RS until the previous operation is done.
-    //lcddev.reg_select(0);
-    *((uint8_t*)&SPI->DR) = data;
-    while((SPI->SR & SPI_SR_BSY) != 0)
-            ;
-
-    CS_HIGH;
-}*/
 void LCD_WR_DATA(uint8_t data)
 {
     CS_LOW;
@@ -207,8 +142,7 @@ uint8_t LCD_RD_REG(uint8_t reg)
 	return readData();
 }
 
-//// FOR NOW READDATA JUST RETURNS 1 ////
-/*uint8_t readData()
+uint8_t readData()
 {
 	uint8_t read;
 	CS_LOW;
@@ -216,46 +150,6 @@ uint8_t LCD_RD_REG(uint8_t reg)
 	read = transByte(0x0);
 	CS_HIGH;
 	return read;
-}*/
-uint8_t readData()
-{
-    uint8_t read;
-    while((SPI->SR & SPI_SR_BSY) != 0)
-            ;
-    CS_LOW;
-    // Don't clear RS until the previous operation is done.
-    *((uint8_t*)&SPI->DR) = RA8875_DATAREAD;
-    while((SPI->SR & SPI_SR_BSY) != 0)
-        ;
-    *((uint8_t*)&SPI->DR) = 0x0;
-    while((SPI->SR & SPI_SR_BSY) != 0)
-        ;
-    while((SPI->SR & SPI_SR_RXNE)==0)
-        ;
-    while((SPI->SR & SPI_SR_RXNE))
-        read = SPI->DR;
-    CS_HIGH;
-    return read;
-}
-// Prepare to write 16-bit data to the LCD
-void LCD_WriteData16_Prepare()
-{
-    lcddev.reg_select(0);
-    SPI->CR2 |= SPI_CR2_DS;
-}
-
-// Write 16-bit data
-void LCD_WriteData16(uint16_t data)
-{
-    while((SPI->SR & SPI_SR_TXE) == 0)
-        ;
-    SPI->DR = data;
-}
-
-// Finish writing 16-bit data
-void LCD_WriteData16_End()
-{
-    SPI->CR2 &= ~SPI_CR2_DS; // bad value forces it back to 8-bit mode
 }
 
 void  writeReg(uint8_t reg, uint8_t val) {
@@ -273,11 +167,6 @@ void nano_wait(unsigned int n) {
 
 void LCD_Init() {
 	// setup for SPI in code, might not be needed since SPI already setup another way
-	CS_HIGH;
-	RESET_LOW;
-	nano_wait(100000000);
-	RESET_HIGH;
-	nano_wait(100000000);
 
 	// initialize()
 	// PLLinit()
@@ -411,7 +300,8 @@ void drawRect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color, in
 		LCD_WR_DATA(0x90);
 	}
 
-	// need to wait
+	// need to wait for command to finish
+	waitPoll(RA8875_DCR, RA8875_DCR_LINESQUTRI_STATUS);
 }
 
 uint16_t applyRotationX(uint16_t x) {
@@ -446,4 +336,14 @@ void PWM1config(int on, uint8_t clock) {
   } else {
     writeReg(RA8875_P1CR, RA8875_P1CR_DISABLE | (clock & 0xF));
   }
+}
+
+uint8_t waitPoll(uint8_t regname, uint8_t waitflag) {
+  /* Wait for the command to finish */
+  while (1) {
+    uint8_t temp = LCD_RD_REG(regname);
+    if (!(temp & waitflag))
+      return 1;
+  }
+  return 0; // MEMEFIX: yeah i know, unreached! - add timeout?
 }

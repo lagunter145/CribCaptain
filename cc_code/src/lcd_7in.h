@@ -79,25 +79,7 @@ extern lcd_dev_t lcddev;
 #define LCD_H 480
 
 // RA9885-specific commands
-/*
-// initialization
-#define RA8875_PLLC1 0x88
-#define RA8875_PLLC2 0x89
-#define RA8875_PLLC1_PLLDIV1 0x00
-#define RA8875_PLLC2_DIV4 0x02
-#define RA8875_SYSR  0x10
-#define RA8875_SYSR_16BPP 0x0c
-#define RA8875_SYSR_MCU8  0x00
-#define RA8875_PCSR_PDATL 0x80
-#define RA8875_PCSR_2CLK  0x01
-#define RA8875_PCSR 0x04
-// horizontal settings
-#define RA8875_HDWR   0x14
-#define RA8875_HNDFTR 0x15
-#define RA8875_HNDFTR_DE_HIGH 0x00
-#define RA8875_HNDR 0x16
-#define RA8875_HSTR 0x17
-*/
+
 // display
 #define DISPLAY    0x90
 #define FILLED     0xB0
@@ -145,4 +127,5 @@ void displayOn(int on);
 void GPIOX(int on);
 void PWM1out(uint8_t p);
 void PWM1config(int on, uint8_t clock);
+uint8_t waitPoll(uint8_t regname, uint8_t waitflag);
 #endif /* LCD_7IN_H_ */

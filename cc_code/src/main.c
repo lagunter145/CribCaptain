@@ -21,8 +21,16 @@
 int main(void)
 {
 	uint8_t x;
+    // manually assert n_rst pin
+	CS_HIGH;
+    RESET_LOW;
+    nano_wait(100000000);
+    RESET_HIGH;
+    nano_wait(100000000);
+
 	setup_spi1();
 	setup_t_irq();
+    //nano_wait(1000000);
 	x = LCD_RD_REG(0);
 	LCD_Init();
 	displayOn(1);
@@ -30,7 +38,7 @@ int main(void)
 	PWM1config(1, RA8875_PWM_CLK_DIV1024); // PWM output for backlight
 	PWM1out(255);
 	fillScreen(GREEN);
-	nano_wait(100000000);
+	//nano_wait(100000000);
 	drawRect(10, 10, 400, 200, RED, 1);
 	//LCD_Clear(BLACK);
 	//Display_Test();
