@@ -21,6 +21,10 @@
 int main(void)
 {
 	uint8_t x;
+	// touch coordinates
+	uint16_t tx, ty;
+	float xScale = 1024.0F/800;
+    float yScale = 1024.0F/480;
     // manually assert n_rst pin
 	CS_HIGH;
     RESET_LOW;
@@ -28,25 +32,31 @@ int main(void)
     RESET_HIGH;
     nano_wait(100000000);
 
+    // setup functions
 	setup_spi1();
-	setup_t_irq();
-    //nano_wait(1000000);
-	x = LCD_RD_REG(0);
+	//setup_t_irq();
+    nano_wait(1000000);
+	x = readReg(0);
 	LCD_Init();
 	displayOn(1);
     GPIOX(1);      // Enable TFT - display enable tied to GPIOX
 	PWM1config(1, RA8875_PWM_CLK_DIV1024); // PWM output for backlight
 	PWM1out(255);
+
+	// hardware accelerated drawing
 	fillScreen(GREEN);
-	//nano_wait(100000000);
 	drawRect(10, 10, 400, 200, RED, 1);
-	//LCD_Clear(BLACK);
-	//Display_Test();
+	drawCircle(700, 400, 50, RA8875_BLUE, 1);
+	// enable touch
+	touchEnable(1);
+
 	for(;;) {
-		nano_wait(300000000);
+	    if (!ra8875INT()){
+	    if (touched()) {
+	        touchRead(&tx, &ty);
+	        /* Draw a circle */
+	        drawCircle((uint16_t)(tx/xScale), (uint16_t)(ty/yScale), 4, RA8875_WHITE, 1);
+	    }
+	    }
 	}
-//	while(1) {
-//		printf("Passing");
-//	}
-//	Touch_Test();
 }

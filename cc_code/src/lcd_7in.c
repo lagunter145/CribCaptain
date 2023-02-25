@@ -12,13 +12,24 @@
 
 lcd_dev_t lcddev;
 
-//SPI FUNCTIONS
+int counter = 0;
+
+void nano_wait(unsigned int n) {
+    asm(    "        mov r0,%0\n"
+            "repeat: sub r0,#83\n"
+            "        bgt repeat\n" : : "r"(n) : "r0", "cc");
+}
+
+/****************************************************************************
+ *                              SPI FUNCTIONS                               *
+ ****************************************************************************/
 
 // setup GPIOB pins for display and setup spi1 to interface with the display
 void setup_spi1() {
 	// enable RCC clock to GPIO B Ports
 	RCC->AHBENR |= RCC_AHBENR_GPIOBEN;
-	//clear and set the MODER values for PB8,9,11,14 for outputs (01 in MODER)
+	//clear and set the MODER values for PB8,9,14 for outputs (01 in MODER)
+	// PB11 cleared and stays 0 to be input
 	GPIOB->MODER &= ~(GPIO_MODER_MODER8 | GPIO_MODER_MODER9| GPIO_MODER_MODER11 | GPIO_MODER_MODER14);
 	GPIOB->MODER |= (GPIO_MODER_MODER8_0 | GPIO_MODER_MODER9_0 | GPIO_MODER_MODER11_0 | GPIO_MODER_MODER14_0);
 	// clear and set the MODER for PB3,4,5 for alternate functions (10 in MODER)
@@ -29,6 +40,12 @@ void setup_spi1() {
 	GPIOB->ODR |= (GPIO_ODR_8 | GPIO_ODR_9 | GPIO_ODR_11 | GPIO_ODR_14);
 	// sets the AFR values for PB3,4,5 as 0000 to set them as alternative functions for SPI1
 	GPIOB->AFR[0] &= ~(GPIO_AFRL_AFR3 | GPIO_AFRL_AFR4 | GPIO_AFRL_AFR5);
+
+	// enable RCC clock to GPIO A Ports
+    RCC->AHBENR |= RCC_AHBENR_GPIOAEN;
+    //clear MODER for PA0
+    GPIOA->MODER &= ~GPIO_MODER_MODER0;
+    GPIOA->PUPDR |= GPIO_PUPDR_PUPDR0_1;
 
 	// full duplex SPI peripheral
 	RCC->APB2ENR |= RCC_APB2ENR_SPI1EN; // enables RCC clock to SPI1
@@ -81,17 +98,20 @@ void setup_t_irq(void) {
 void EXTI0_1_IRQHandler (void) {
 	// check the pin which triggered the interrupt
 	if((EXTI->PR & EXTI_PR_PR0) == EXTI_PR_PR0){
-		//char xString[80] = "X:";
-		//char yString[80] = "Y:";
 		// acknowledges the interrupt by writing a 1 to the register
-		//LCD_Clear(BLACK);
-		fillScreen(RED);
-		uint16_t x, y;
-		//(&x, &y);
-		//strcat(xString, itoa(x, xString, 10));
-		//LCD_DrawString(140,(80),  WHITE, BLACK, itoa(x, xString, 10), 16, 1);
-		//strcat(yString, itoa(y, yString, 10));
-		//LCD_DrawString(140,(80 + (16)),  WHITE, BLACK, itoa(y, yString, 10), 16, 1);
+		if (counter % 2)
+		    fillScreen(RED);
+		else
+		    fillScreen(YELLOW);
+		counter++;
+//		uint16_t tx, ty;
+//		float xScale = 1024.0F/800;
+//        float yScale = 1024.0F/480;
+//        if (touched()) {
+//            touchRead(&tx, &ty);
+//            /* Draw a circle */
+//            drawCircle((uint16_t)(tx/xScale), (uint16_t)(ty/yScale), 4, RA8875_WHITE, 1);
+//        }
 		nano_wait(300000000); //REPLACE WITH A ONE SHOT TIMER
 		if((EXTI->PR & EXTI_PR_PR0) == EXTI_PR_PR0){
 			EXTI->PR |= EXTI_PR_PR0;
@@ -100,6 +120,11 @@ void EXTI0_1_IRQHandler (void) {
 	}
 }
 
+// read RA8875 INT pin (A0)
+uint8_t ra8875INT()
+{
+    return (GPIOA->IDR & GPIO_IDR_0);
+}
 
 // Transfers a byte over SPI. Does not control NSSP
 uint8_t transByte(uint8_t d)
@@ -136,12 +161,14 @@ void LCD_WR_DATA(uint8_t data)
     CS_HIGH;
 }
 
-uint8_t LCD_RD_REG(uint8_t reg)
+// read from an RA8875 register
+uint8_t readReg(uint8_t reg)
 {
 	LCD_WR_REG(reg);
 	return readData();
 }
 
+// reads data from the RA8875
 uint8_t readData()
 {
 	uint8_t read;
@@ -152,6 +179,7 @@ uint8_t readData()
 	return read;
 }
 
+// writes val to RA8875 reg
 void  writeReg(uint8_t reg, uint8_t val) {
 	// specify to RA8775 what register to write to
 	LCD_WR_REG(reg);
@@ -159,15 +187,11 @@ void  writeReg(uint8_t reg, uint8_t val) {
 	LCD_WR_DATA(val);
 }
 
-void nano_wait(unsigned int n) {
-    asm(    "        mov r0,%0\n"
-            "repeat: sub r0,#83\n"
-            "        bgt repeat\n" : : "r"(n) : "r0", "cc");
-}
+/****************************************************************************
+ *                  LCD INITIALIZATION FUNCTIONS                            *
+ ****************************************************************************/
 
 void LCD_Init() {
-	// setup for SPI in code, might not be needed since SPI already setup another way
-
 	// initialize()
 	// PLLinit()
 	// size == 800x480
@@ -227,7 +251,54 @@ void LCD_Init() {
 	spi1_fast();
 }
 
-// DRAWING FUNCTIONS
+void displayOn(int on) {
+  if (on)
+    writeReg(RA8875_PWRR, RA8875_PWRR_NORMAL | RA8875_PWRR_DISPON);
+  else
+    writeReg(RA8875_PWRR, RA8875_PWRR_NORMAL | RA8875_PWRR_DISPOFF);
+}
+
+void GPIOX(int on){
+ if (on)
+    writeReg(RA8875_GPIOX, 1);
+  else
+    writeReg(RA8875_GPIOX, 0);
+}
+
+void PWM1out(uint8_t p){
+    writeReg(RA8875_P1DCR, p);
+}
+
+void PWM1config(int on, uint8_t clock) {
+  if (on) {
+    writeReg(RA8875_P1CR, RA8875_P1CR_ENABLE | (clock & 0xF));
+  } else {
+    writeReg(RA8875_P1CR, RA8875_P1CR_DISABLE | (clock & 0xF));
+  }
+}
+
+uint8_t waitPoll(uint8_t regname, uint8_t waitflag) {
+  /* Wait for the command to finish */
+  while (1) {
+    uint8_t temp = readReg(regname);
+    if (!(temp & waitflag))
+      return 1;
+  }
+  return 0; // MEMEFIX: yeah i know, unreached! - add timeout?
+}
+
+/****************************************************************************
+ *                          DRAWING FUNCTIONS                               *
+ ****************************************************************************/
+
+uint16_t applyRotationX(uint16_t x) {
+    return x;
+}
+
+uint16_t applyRotationY(uint16_t y) {
+    return y;
+}
+
 void fillScreen(uint16_t color) {
 	drawRect(0,0,LCD_W-1,LCD_H-1,color,1);
 }
@@ -304,46 +375,105 @@ void drawRect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color, in
 	waitPoll(RA8875_DCR, RA8875_DCR_LINESQUTRI_STATUS);
 }
 
-uint16_t applyRotationX(uint16_t x) {
-	return x;
-}
+void drawCircle(int16_t x, int16_t y, int16_t r, uint16_t color, uint8_t filled) {
+  x = applyRotationX(x);
+  y = applyRotationY(y);
 
-uint16_t applyRotationY(uint16_t y) {
-	return y;
-}
+  /* Set X */
+  LCD_WR_REG(0x99);
+  LCD_WR_DATA(x);
+  LCD_WR_REG(0x9a);
+  LCD_WR_DATA(x >> 8);
 
-void displayOn(int on) {
-  if (on)
-    writeReg(RA8875_PWRR, RA8875_PWRR_NORMAL | RA8875_PWRR_DISPON);
-  else
-    writeReg(RA8875_PWRR, RA8875_PWRR_NORMAL | RA8875_PWRR_DISPOFF);
-}
+  /* Set Y */
+  LCD_WR_REG(0x9b);
+  LCD_WR_DATA(y);
+  LCD_WR_REG(0x9c);
+  LCD_WR_DATA(y >> 8);
 
-void GPIOX(int on){
- if (on)
-	writeReg(RA8875_GPIOX, 1);
-  else
-	writeReg(RA8875_GPIOX, 0);
-}
+  /* Set Radius */
+  LCD_WR_REG(0x9d);
+  LCD_WR_DATA(r);
 
-void PWM1out(uint8_t p){
-	writeReg(RA8875_P1DCR, p);
-}
+  /* Set Color */
+  LCD_WR_REG(0x63);
+  LCD_WR_DATA((color & 0xf800) >> 11);
+  LCD_WR_REG(0x64);
+  LCD_WR_DATA((color & 0x07e0) >> 5);
+  LCD_WR_REG(0x65);
+  LCD_WR_DATA((color & 0x001f));
 
-void PWM1config(int on, uint8_t clock) {
-  if (on) {
-    writeReg(RA8875_P1CR, RA8875_P1CR_ENABLE | (clock & 0xF));
+  /* Draw! */
+  LCD_WR_REG(RA8875_DCR);
+  if (filled) {
+      LCD_WR_DATA(RA8875_DCR_CIRCLE_START | RA8875_DCR_FILL);
   } else {
-    writeReg(RA8875_P1CR, RA8875_P1CR_DISABLE | (clock & 0xF));
+      LCD_WR_DATA(RA8875_DCR_CIRCLE_START | RA8875_DCR_NOFILL);
+  }
+
+  /* Wait for the command to finish */
+  waitPoll(RA8875_DCR, RA8875_DCR_CIRCLE_STATUS);
+}
+
+
+
+/****************************************************************************
+ *                            TOUCH FUNCTIONS                               *
+ ****************************************************************************/
+void touchEnable(uint8_t on) {
+  uint8_t adcClk = (uint8_t)RA8875_TPCR0_ADCCLK_DIV16;
+
+  if (on) {
+    /* Enable Touch Panel (Reg 0x70) */
+    writeReg(RA8875_TPCR0, RA8875_TPCR0_ENABLE | RA8875_TPCR0_WAIT_4096CLK |
+             RA8875_TPCR0_WAKEENABLE | adcClk); // 10mhz max!
+    /* Set Auto Mode      (Reg 0x71) */
+    writeReg(RA8875_TPCR1, RA8875_TPCR1_AUTO |
+          // RA8875_TPCR1_VREFEXT |
+             RA8875_TPCR1_DEBOUNCE);
+    /* Enable TP INT */
+    writeReg(RA8875_INTC1, readReg(RA8875_INTC1) | RA8875_INTC1_TP);
+  } else {
+    /* Disable TP INT */
+    writeReg(RA8875_INTC1, readReg(RA8875_INTC1) & ~RA8875_INTC1_TP);
+    /* Disable Touch Panel (Reg 0x70) */
+    writeReg(RA8875_TPCR0, RA8875_TPCR0_DISABLE);
   }
 }
 
-uint8_t waitPoll(uint8_t regname, uint8_t waitflag) {
-  /* Wait for the command to finish */
-  while (1) {
-    uint8_t temp = LCD_RD_REG(regname);
-    if (!(temp & waitflag))
-      return 1;
-  }
-  return 0; // MEMEFIX: yeah i know, unreached! - add timeout?
+uint8_t touched(void) {
+  if (readReg(RA8875_INTC2) & RA8875_INTC2_TP)
+    return 1;
+  return 0;
+}
+
+/*********************************************/
+/*!
+      Reads the last touch event
+      @param x  Pointer to the uint16_t field to assign the raw X value
+      @param y  Pointer to the uint16_t field to assign the raw Y value
+      @return True if successful
+      @note Calling this function will clear the touch panel interrupt on
+            the RA8875, resetting the flag used by the 'touched' function
+*/
+/*********************************************/
+uint8_t touchRead(uint16_t *x, uint16_t *y) {
+  uint16_t tx, ty;
+  uint8_t temp;
+
+  tx = readReg(RA8875_TPXH);
+  ty = readReg(RA8875_TPYH);
+  temp = readReg(RA8875_TPXYL);
+  tx <<= 2;
+  ty <<= 2;
+  tx |= temp & 0x03;        // get the bottom x bits
+  ty |= (temp >> 2) & 0x03; // get the bottom y bits
+
+  *x = tx;
+  *y = ty;
+
+  /* Clear TP INT Status */
+  writeReg(RA8875_INTC2, RA8875_INTC2_TP);
+
+  return 1;
 }

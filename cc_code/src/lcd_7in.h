@@ -113,12 +113,13 @@ void setup_spi1();
 void setup_t_irq();
 void LCD_Init();
 void spi1_fast();
-//static void tft_select(int val);
+uint8_t ra8875INT();
 uint8_t transByte(uint8_t d);
-uint8_t LCD_RD_REG(uint8_t reg);
+uint8_t readReg(uint8_t reg);
 uint8_t readData();
 void fillScreen(uint16_t color);
 void drawRect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color, int filled);
+void drawCircle(int16_t x, int16_t y, int16_t r, uint16_t color, uint8_t filled);
 
 uint16_t applyRotationX(uint16_t x);
 uint16_t applyRotationY(uint16_t y);
@@ -128,4 +129,7 @@ void GPIOX(int on);
 void PWM1out(uint8_t p);
 void PWM1config(int on, uint8_t clock);
 uint8_t waitPoll(uint8_t regname, uint8_t waitflag);
+void touchEnable(uint8_t on);
+uint8_t touched(void);
+uint8_t touchRead(uint16_t *x, uint16_t *y);
 #endif /* LCD_7IN_H_ */
