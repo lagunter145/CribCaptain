@@ -21,6 +21,7 @@
 int main(void)
 {
 	uint8_t x;
+	char string[15] = "Hello, World! ";
 	// touch coordinates
 	uint16_t tx, ty;
 	float xScale = 1024.0F/800;
@@ -47,6 +48,21 @@ int main(void)
 	fillScreen(GREEN);
 	drawRect(10, 10, 400, 200, RED, 1);
 	drawCircle(700, 400, 50, RA8875_BLUE, 1);
+
+	// switch to text mode
+	textMode();
+	cursorBlink(32);
+	textEnlarge(0);
+	textSetCursor(10, 10);
+	textColor(0x8170, RA8875_WHITE);
+	textWrite(string, 15);
+	textSetCursor(100, 150);
+	textEnlarge(2);
+	textWrite(string, 15);
+
+	// switch back to graphics mode
+	graphicsMode();
+
 	// enable touch
 	touchEnable(1);
 

@@ -13,6 +13,7 @@
 lcd_dev_t lcddev;
 
 int counter = 0;
+uint8_t _textScale;
 
 void nano_wait(unsigned int n) {
     asm(    "        mov r0,%0\n"
@@ -104,14 +105,6 @@ void EXTI0_1_IRQHandler (void) {
 		else
 		    fillScreen(YELLOW);
 		counter++;
-//		uint16_t tx, ty;
-//		float xScale = 1024.0F/800;
-//        float yScale = 1024.0F/480;
-//        if (touched()) {
-//            touchRead(&tx, &ty);
-//            /* Draw a circle */
-//            drawCircle((uint16_t)(tx/xScale), (uint16_t)(ty/yScale), 4, RA8875_WHITE, 1);
-//        }
 		nano_wait(300000000); //REPLACE WITH A ONE SHOT TIMER
 		if((EXTI->PR & EXTI_PR_PR0) == EXTI_PR_PR0){
 			EXTI->PR |= EXTI_PR_PR0;
@@ -299,6 +292,13 @@ uint16_t applyRotationY(uint16_t y) {
     return y;
 }
 
+void graphicsMode(void) {
+  LCD_WR_REG(RA8875_MWCR0);
+  uint8_t temp = readData();
+  temp &= ~RA8875_MWCR0_TXTMODE; // bit #7
+  LCD_WR_DATA(temp);
+}
+
 void fillScreen(uint16_t color) {
 	drawRect(0,0,LCD_W-1,LCD_H-1,color,1);
 }
@@ -476,4 +476,169 @@ uint8_t touchRead(uint16_t *x, uint16_t *y) {
   writeReg(RA8875_INTC2, RA8875_INTC2_TP);
 
   return 1;
+}
+
+/**************************************************************************
+ *                              TEXT FUNCTIONS                            *
+ **************************************************************************/
+void textMode() {
+  /* Set text mode */
+  LCD_WR_REG(RA8875_MWCR0);
+  uint8_t temp = readData();
+  temp |= RA8875_MWCR0_TXTMODE; // Set bit 7
+  LCD_WR_DATA(temp);
+
+  /* Select the internal (ROM) font */
+  LCD_WR_REG(0x21);
+  temp = readData();
+  temp &= ~((1 << 7) | (1 << 5)); // Clear bits 7 and 5
+  LCD_WR_DATA(temp);
+}
+
+/****************************************/
+/*!
+     Enable Cursor Visibility and Blink
+     Here we set bits 6 and 5 in 40h
+     As well as the set the blink rate in 44h
+     The rate is 0 through max 255
+     the lower the number the faster it blinks (00h is 1 frame time,
+     FFh is 256 Frames time.
+     Blink Time (sec) = BTCR[44h]x(1/Frame_rate)
+     @param rate The frame rate to blink
+ */
+/****************************************/
+
+void cursorBlink(uint8_t rate) {
+
+  LCD_WR_REG(RA8875_MWCR0);
+  uint8_t temp = readData();
+  temp |= RA8875_MWCR0_CURSOR;
+  LCD_WR_DATA(temp);
+
+  LCD_WR_REG(RA8875_MWCR0);
+  temp = readData();
+  temp |= RA8875_MWCR0_BLINK;
+  LCD_WR_DATA(temp);
+
+  if (rate > 255)
+    rate = 255;
+  LCD_WR_REG(RA8875_BTCR);
+  LCD_WR_DATA(rate);
+}
+
+/****************************************************************/
+/*!
+      Sets the display in text mode (as opposed to graphics mode)
+      @param x The x position of the cursor (in pixels, 0..1023)
+      @param y The y position of the cursor (in pixels, 0..511)
+*/
+/****************************************************************/
+void textSetCursor(uint16_t x, uint16_t y) {
+  x = applyRotationX(x);
+  y = applyRotationY(y);
+
+  /* Set cursor location */
+  LCD_WR_REG(0x2A);
+  LCD_WR_DATA(x & 0xFF);
+  LCD_WR_REG(0x2B);
+  LCD_WR_DATA(x >> 8);
+  LCD_WR_REG(0x2C);
+  LCD_WR_DATA(y & 0xFF);
+  LCD_WR_REG(0x2D);
+  LCD_WR_DATA(y >> 8);
+}
+
+/******************************************************************/
+/*!
+      Sets the fore color when rendering text with a transparent bg
+      @param foreColor The RGB565 color to use when rendering the text
+*/
+/******************************************************************/
+void textTransparent(uint16_t foreColor) {
+  /* Set Fore Color */
+  LCD_WR_REG(0x63);
+  LCD_WR_DATA((foreColor & 0xf800) >> 11);
+  LCD_WR_REG(0x64);
+  LCD_WR_DATA((foreColor & 0x07e0) >> 5);
+  LCD_WR_REG(0x65);
+  LCD_WR_DATA((foreColor & 0x001f));
+
+  /* Set transparency flag */
+  LCD_WR_REG(0x22);
+  uint8_t temp = readData();
+  temp |= (1 << 6); // Set bit 6
+  LCD_WR_DATA(temp);
+}
+
+/******************************************************/
+/*!
+      Renders some text on the screen when in text mode
+      @param buffer    The buffer containing the characters to render
+      @param len       The size of the buffer in bytes
+*/
+/******************************************************/
+void textWrite(const char *buffer, uint16_t len) {
+  LCD_WR_REG(RA8875_MRWC);
+  for (uint16_t i = 0; i < len; i++) {
+    LCD_WR_DATA(buffer[i]);
+    if (_textScale > 0)
+      nano_wait(1000000);
+  }
+}
+
+/***********************************************************/
+/*!
+      Sets the fore and background color when rendering text
+      @param foreColor The RGB565 color to use when rendering the text
+      @param bgColor   The RGB565 colot to use for the background
+*/
+/***********************************************************/
+void textColor(uint16_t foreColor, uint16_t bgColor) {
+  /* Set Fore Color */
+  LCD_WR_REG(0x63);
+  LCD_WR_DATA((foreColor & 0xf800) >> 11);
+  LCD_WR_REG(0x64);
+  LCD_WR_DATA((foreColor & 0x07e0) >> 5);
+  LCD_WR_REG(0x65);
+  LCD_WR_DATA((foreColor & 0x001f));
+
+  /* Set Background Color */
+  LCD_WR_REG(0x60);
+  LCD_WR_DATA((bgColor & 0xf800) >> 11);
+  LCD_WR_REG(0x61);
+  LCD_WR_DATA((bgColor & 0x07e0) >> 5);
+  LCD_WR_REG(0x62);
+  LCD_WR_DATA((bgColor & 0x001f));
+
+  /* Clear transparency flag */
+  LCD_WR_REG(0x22);
+  uint8_t temp = readData();
+  temp &= ~(1 << 6); // Clear bit 6
+  LCD_WR_DATA(temp);
+}
+
+/*****************************************************************/
+/*!
+      Sets the text enlarge settings, using one of the following values:
+      0 = 1x zoom
+      1 = 2x zoom
+      2 = 3x zoom
+      3 = 4x zoom
+      @param scale   The zoom factor (0..3 for 1-4x zoom)
+*/
+/*****************************************************************/
+void textEnlarge(uint8_t scale) {
+  if (scale > 3)
+    scale = 3; // highest setting is 3
+
+  /* Set font size flags */
+  LCD_WR_REG(0x22);
+  uint8_t temp = readData();
+  temp &= ~(0xF); // Clears bits 0..3
+  temp |= scale << 2;
+  temp |= scale;
+
+  LCD_WR_DATA(temp);
+
+  _textScale = scale;
 }

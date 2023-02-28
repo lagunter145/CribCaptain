@@ -34,6 +34,8 @@ typedef struct
 // is defined properly for the rotation.
 extern lcd_dev_t lcddev;
 
+extern uint8_t _textScale;
+
 // display's chip select: PB8
 #define CS_NUM  8
 #define CS_BIT  (1<<CS_NUM)
@@ -113,23 +115,32 @@ void setup_spi1();
 void setup_t_irq();
 void LCD_Init();
 void spi1_fast();
-uint8_t ra8875INT();
-uint8_t transByte(uint8_t d);
-uint8_t readReg(uint8_t reg);
-uint8_t readData();
-void fillScreen(uint16_t color);
-void drawRect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color, int filled);
-void drawCircle(int16_t x, int16_t y, int16_t r, uint16_t color, uint8_t filled);
-
-uint16_t applyRotationX(uint16_t x);
-uint16_t applyRotationY(uint16_t y);
-
 void displayOn(int on);
 void GPIOX(int on);
 void PWM1out(uint8_t p);
 void PWM1config(int on, uint8_t clock);
+uint8_t ra8875INT();
+uint8_t transByte(uint8_t d);
+uint8_t readReg(uint8_t reg);
+uint8_t readData();
+
+uint16_t applyRotationX(uint16_t x);
+uint16_t applyRotationY(uint16_t y);
+void graphicsMode(void);
+void fillScreen(uint16_t color);
+void drawRect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color, int filled);
+void drawCircle(int16_t x, int16_t y, int16_t r, uint16_t color, uint8_t filled);
+
 uint8_t waitPoll(uint8_t regname, uint8_t waitflag);
 void touchEnable(uint8_t on);
 uint8_t touched(void);
 uint8_t touchRead(uint16_t *x, uint16_t *y);
+
+void textMode();
+void cursorBlink(uint8_t rate);
+void textSetCursor(uint16_t x, uint16_t y);
+void textTransparent(uint16_t foreColor);
+void textWrite(const char *buffer, uint16_t len);
+void textColor(uint16_t foreColor, uint16_t bgColor);
+void textEnlarge(uint8_t scale);
 #endif /* LCD_7IN_H_ */
