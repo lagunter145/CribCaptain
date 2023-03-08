@@ -1,4 +1,4 @@
-20187814293055125
+20191169370781941
 Audio_Module
 Reverb_BTDR-1H
 Digital Reverberation Unit, http://www.belton.co.kr/inc/downfile.php?seq=17&file=pdf (footprint from http://www.uk-electronic.de/PDF/BTDR-1.pdf)
@@ -85700,6 +85700,20 @@ Micro_SD_card_reader
 0
 7
 7
+imported_footprints
+MountingHole_2.2mm
+
+
+0
+0
+0
+imported_footprints
+MountingHole_8.4mm
+
+
+0
+0
+0
 imported_footprints
 PS_2_Wire
 
