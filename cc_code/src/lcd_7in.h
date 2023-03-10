@@ -11,28 +11,7 @@
 #define SPI SPI1
 #include "RA8775_commands.h"
 void nano_wait(unsigned int);
-// The LCD device structure definition.
-//
-typedef struct
-{
-    uint16_t width;
-    uint16_t height;
-    uint16_t id;
-    uint8_t  dir;
-    uint16_t  wramcmd;
-    uint16_t  setxcmd;
-    uint16_t  setycmd;
-    void (*reset)(int);
-    void (*select)(int);
-    void (*reg_select)(int);
-} lcd_dev_t;
 
-// The LCD device.
-// This will be initialized by LCD_direction() so that the
-// width and height will be appropriate for the rotation.
-// The setxcmd and setycmd will be set so that cursor selection
-// is defined properly for the rotation.
-extern lcd_dev_t lcddev;
 
 extern uint8_t _textScale;
 

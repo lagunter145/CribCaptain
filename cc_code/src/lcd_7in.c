@@ -10,7 +10,6 @@
 #include "lcd_7in.h"
 #include "RA8775_commands.h"
 
-lcd_dev_t lcddev;
 
 int counter = 0;
 uint8_t _textScale;
@@ -29,7 +28,7 @@ void nano_wait(unsigned int n) {
 void setup_spi1() {
 	// enable RCC clock to GPIO B Ports
 	RCC->AHBENR |= RCC_AHBENR_GPIOBEN;
-	//clear and set the MODER values for PB8,9,14 for outputs (01 in MODER)
+	// clear and set the MODER values for PB8,9,14 for outputs (01 in MODER)
 	// PB11 cleared and stays 0 to be input
 	GPIOB->MODER &= ~(GPIO_MODER_MODER8 | GPIO_MODER_MODER9| GPIO_MODER_MODER11 | GPIO_MODER_MODER14);
 	GPIOB->MODER |= (GPIO_MODER_MODER8_0 | GPIO_MODER_MODER9_0 | GPIO_MODER_MODER11_0 | GPIO_MODER_MODER14_0);
@@ -51,66 +50,60 @@ void setup_spi1() {
 	// full duplex SPI peripheral
 	RCC->APB2ENR |= RCC_APB2ENR_SPI1EN; // enables RCC clock to SPI1
 	// spi1_cr1 config
-	SPI1->CR1 &= ~(SPI_CR1_SPE); // disable spi enable pin so that spi can be configured
-	SPI1->CR1 |= SPI_CR1_MSTR; // configure spi for master mode
+	SPI1->CR1 &= ~(SPI_CR1_SPE);// disable spi enable pin so that spi can be configured
+	SPI1->CR1 |= SPI_CR1_MSTR;  // configure spi for master mode
 	SPI1->CR1 &= ~(SPI_CR1_BR); // baud rate set to fpclk/256 (slowest)
 	SPI1->CR1 |= 0x38;
 	SPI1->CR1 |= (SPI_CR1_SSI | SPI_CR1_SSM); // set SSM(software slave management)/SSI(internal slave select) for SPI1
 	SPI1->CR2 &= ~(SPI_CR2_DS); // clears what was set for word size
 	SPI1->CR2 |= (SPI_CR2_DS_0 | SPI_CR2_DS_1 | SPI_CR2_DS_2); // sets word size to 8 bits
 	SPI1->CR2 |= SPI_CR2_FRXTH; // set RXFIFO threshold to 8 bits
-	SPI1->CR1 |= SPI_CR1_SPE; // enable spi1
+	SPI1->CR1 |= SPI_CR1_SPE;   // enable spi1
 }
 
 // function to set SPI baud rate to fpclk/16
 void spi1_fast()
 {
-	SPI1->CR1 &= ~(SPI_CR1_SPE); // disable spi enable pin so that spi can be configured
+	SPI1->CR1 &= ~(SPI_CR1_SPE);// disable SPI enable pin so that SPI can be configured
 	SPI1->CR1 &= ~(SPI_CR1_BR); // baud rate set to fpclk/16 (~3.2 MHz)
 	SPI1->CR1 |= 0x18;
-	SPI1->CR1 |= SPI_CR1_SPE; // enable spi1
+	SPI1->CR1 |= SPI_CR1_SPE;   // enable spi1
 }
 
 // taken from A.6.2 (pg. 944)
 void setup_t_irq(void) {
-	// enable RCC clock to GPIO A Ports
-	RCC->AHBENR |= RCC_AHBENR_GPIOAEN;
+    // enable the SYSCFGCOMP for EXTI interrupts
+	RCC->APB2ENR |= RCC_APB2ENR_SYSCFGCOMPEN;
 	// Select Port A for pin 0 external interrupt by writing 0000 in EXTI0
-	SYSCFG->EXTICR[1] &= (uint16_t)~SYSCFG_EXTICR1_EXTI0_PA;
+	SYSCFG->EXTICR[0] &= (uint16_t)~SYSCFG_EXTICR1_EXTI0_PA;
 	// Configure corresponding mask bit in the EXTI_IMR register (EXTI_IMR_MR0 = 0x0001)
 	// Writing 1 to corresponding mask bit in EXTI_IMR means "Interrupt request from Line x(0) is not masked"
-	// I think PA0 is on line 0 for EXTI0 (figure 25 on pg. 222)
+	// PA0 is on line 0 for EXTI0 (figure 25 on pg. 222)
 	EXTI->IMR = EXTI_IMR_MR0;
-	// Configure the Trigger Selection bits of the Interrupt line on rising edge (EXTI_RTSR_TR0 = 0x0001)
-	// Writing 1 to corresponding mask bit in EXTI_RTSR means "Rising trigger enabled (for Event and Interrupt) for input line"
-	//EXTI->RTSR = EXTI_RTSR_TR0;
 	// Configure the Trigger Selection bits of the Interrupt line on falling edge (EXTI_FTSR_TR0 = 0x0001)
 	// Writing 1 to corresponding mask bit in EXTI_FTSR means "Falling trigger enabled (for Event and Interrupt) for input line"
 	EXTI->FTSR = EXTI_FTSR_TR0;
 	// Configure NVIC for External Interrupt
 	// Enable Interrupt on EXTI0_1
-	NVIC_EnableIRQ(EXTI0_1_IRQn);
+	NVIC->ISER[0] |= 1 << EXTI0_1_IRQn;
 	// Set priority for EXTI0_1
 	NVIC_SetPriority(EXTI0_1_IRQn, 0);
 }
 
-// taken from (https://controllerstech.com/external-interrupt-using-registers/)
-// will print the x and y coords to terminal if touched
+
 void EXTI0_1_IRQHandler (void) {
-	// check the pin which triggered the interrupt
-	if((EXTI->PR & EXTI_PR_PR0) == EXTI_PR_PR0){
-		// acknowledges the interrupt by writing a 1 to the register
-		if (counter % 2)
-		    fillScreen(RED);
-		else
-		    fillScreen(YELLOW);
-		counter++;
-		nano_wait(300000000); //REPLACE WITH A ONE SHOT TIMER
-		if((EXTI->PR & EXTI_PR_PR0) == EXTI_PR_PR0){
-			EXTI->PR |= EXTI_PR_PR0;
-	    }
-		//times_touched++;
-	}
+    // acknowledge the interrupt
+    EXTI->PR |= EXTI_PR_PR0;
+
+    uint16_t tx, ty;
+    float xScale = 1024.0F/800;
+    float yScale = 1024.0F/480;
+
+    if (touched()) {
+        touchRead(&tx, &ty);
+        /* Draw a circle */
+        drawCircle((uint16_t)(tx/xScale), (uint16_t)(ty/yScale), 4, RA8875_WHITE, 1);
+    }
 }
 
 // read RA8875 INT pin (A0)

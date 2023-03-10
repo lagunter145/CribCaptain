@@ -35,7 +35,7 @@ int main(void)
 
     // setup functions
 	setup_spi1();
-	//setup_t_irq();
+	setup_t_irq();
     nano_wait(1000000);
 	x = readReg(0);
 	LCD_Init();
@@ -48,6 +48,9 @@ int main(void)
 	fillScreen(GREEN);
 	drawRect(10, 10, 400, 200, RED, 1);
 	drawCircle(700, 400, 50, RA8875_BLUE, 1);
+
+	// enable touch
+	touchEnable(1);
 
 	// switch to text mode
 	textMode();
@@ -63,16 +66,13 @@ int main(void)
 	// switch back to graphics mode
 	graphicsMode();
 
-	// enable touch
-	touchEnable(1);
-
 	for(;;) {
-	    if (!ra8875INT()){
-	    if (touched()) {
-	        touchRead(&tx, &ty);
-	        /* Draw a circle */
-	        drawCircle((uint16_t)(tx/xScale), (uint16_t)(ty/yScale), 4, RA8875_WHITE, 1);
-	    }
-	    }
+//	    if (!ra8875INT()){
+//	    if (touched()) {
+//	        touchRead(&tx, &ty);
+//	        /* Draw a circle */
+//	        drawCircle((uint16_t)(tx/xScale), (uint16_t)(ty/yScale), 4, RA8875_WHITE, 1);
+//	    }
+//	    }
 	}
 }
