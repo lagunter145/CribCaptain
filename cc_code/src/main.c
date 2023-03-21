@@ -10,8 +10,9 @@
 
 
 #include "stm32f0xx.h"
-#include "lcd.h"
-#include "touch.h"
+//#include "lcd.h"
+#include "lcd_7in.h"
+//#include "touch.h"
 #include "test.h"
 #include <stdio.h>
 #include <stdint.h>
@@ -22,6 +23,7 @@
 
 int main(void)
 {
+
 
 	setup_uart1();
 	//setup_spi1();
@@ -85,6 +87,64 @@ int main(void)
 
 
 
+
+/*
+	uint8_t x;
+	char string[15] = "Hello, World! ";
+	// touch coordinates
+	uint16_t tx, ty;
+	float xScale = 1024.0F/800;
+    float yScale = 1024.0F/480;
+    // manually assert n_rst pin
+	CS_HIGH;
+    RESET_LOW;
+    nano_wait(100000000);
+    RESET_HIGH;
+    nano_wait(100000000);
+
+    // setup functions
+	setup_spi1();
+	setup_t_irq();
+    nano_wait(1000000);
+	x = readReg(0);
+	LCD_Init();
+	displayOn(1);
+    GPIOX(1);      // Enable TFT - display enable tied to GPIOX
+	PWM1config(1, RA8875_PWM_CLK_DIV1024); // PWM output for backlight
+	PWM1out(255);
+
+	// hardware accelerated drawing
+	fillScreen(GREEN);
+	drawRect(10, 10, 400, 200, RED, 1);
+	drawCircle(700, 400, 50, RA8875_BLUE, 1);
+
+	// enable touch
+	touchEnable(1);
+
+	// switch to text mode
+	textMode();
+	cursorBlink(32);
+	textEnlarge(0);
+	textSetCursor(10, 10);
+	textColor(0x8170, RA8875_WHITE);
+	textWrite(string, 15);
+	textSetCursor(100, 150);
+	textEnlarge(2);
+	textWrite(string, 15);
+
+	// switch back to graphics mode
+	graphicsMode();
+
+	for(;;) {
+//	    if (!ra8875INT()){
+//	    if (touched()) {
+//	        touchRead(&tx, &ty);
+//	        /* Draw a circle */
+//	        drawCircle((uint16_t)(tx/xScale), (uint16_t)(ty/yScale), 4, RA8875_WHITE, 1);
+//	    }
+//	    }
+	}
+*/
 
 }
 
