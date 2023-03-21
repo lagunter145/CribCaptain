@@ -39,7 +39,7 @@ void setup_t_irq(void) {
 	// Set priority for EXTI0_1
 	NVIC_SetPriority(EXTI0_1_IRQn, 0);
 }
-
+/*
 // taken from (https://controllerstech.com/external-interrupt-using-registers/)
 // will print the x and y coords to terminal if touched
 void EXTI0_1_IRQHandler (void) {
@@ -63,6 +63,7 @@ void EXTI0_1_IRQHandler (void) {
 	}
 }
 
+*/
 // 2.8inch_SPI_Module_ILI9341_MSP2807_V1.1 from http://www.lcdwiki.com/2.8inch_SPI_Module_ILI9341_SKU:MSP2807
 
 

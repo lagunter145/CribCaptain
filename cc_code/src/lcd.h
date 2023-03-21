@@ -75,6 +75,11 @@ extern lcd_dev_t lcddev;
 #define LGRAYBLUE   0XA651
 #define LBBLUE      0X2B12
 
+
+void setup_spi1();
+
+
+void nano_wait(unsigned int n);
 void LCD_Init(void (*reset)(int), void (*select)(int), void (*reg_select)(int));
 void LCD_Clear(u16 Color);
 void LCD_DrawPoint(u16 x,u16 y,u16 c);
