@@ -1,0 +1,3 @@
+(sym_lib_table
+  (lib (name "SparkFun_microSD_Breakout-eagle-import")(type "KiCad")(uri "${KIPRJMOD}/SparkFun_microSD_Breakout-eagle-import.kicad_sym")(options "")(descr ""))
+)

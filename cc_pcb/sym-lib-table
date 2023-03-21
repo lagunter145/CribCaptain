@@ -1,0 +1,3 @@
+(sym_lib_table
+  (lib (name "created_schematics")(type "KiCad")(uri "${KIPRJMOD}/schematic_symbol/created_schematics.kicad_sym")(options "")(descr ""))
+)
