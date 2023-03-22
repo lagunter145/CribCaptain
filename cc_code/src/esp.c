@@ -10,6 +10,9 @@
 #include "esp.h"
 #include <stdint.h>
 #include <string.h>
+#include "lcd_7in.h"
+#include <stdlib.h>
+
 
 char readBuffer[10];
 
@@ -51,7 +54,7 @@ void setup_uart1() {
 	//USART1->CR1 |= USART_CR1_RXNEIE;
 
 	//Enable DMA reciever access
-	USART1->CR3 |= USART_CR3_DMAR;
+	//USART1->CR3 |= USART_CR3_DMAR;
 
 	//Baud rate of 115200
 	USART1->BRR = 0;
@@ -109,6 +112,64 @@ char wifi_checkstring(char * response) {
 	}
 	return 1;
 }
+
+
+void http_getrequest(char * uri, int requestState) {
+	//parse the url from the uri
+	char *url = strtok(uri, "/");
+	//get the resource information from the uri
+	char *resource = strtok(NULL," ");
+	int getLength = 5 + strlen(resource) + 6;
+
+	//connect the to the ip of the server
+	if (requestState == 0) {
+		wifi_sendstring("AT+CIPSTART=\"TCP\",\"");
+		wifi_sendstring(url);
+		wifi_sendstring("\",80\r\n");
+	}
+
+	//sends the number of bytes in the the get request (AT+CIPSEND)
+	if (requestState == 1) {
+		wifi_sendstring("AT+CIPSEND=");
+		char buff[2];
+		itoa(getLength, buff,10);
+		wifi_sendstring(buff);
+		wifi_sendstring("\r\n");
+	}
+
+	//send the get request
+	if (requestState == 2) {
+		//form the HTTP get request and send it
+		wifi_sendstring("GET /");
+		wifi_sendstring(resource);
+		wifi_sendstring("\r\n\r\n\r\n");
+		//write to the screen that it is done
+		textWrite(resource, strlen(resource));
+	}
+
+}
+
+
+/*
+ *
+ *sample code that i wrote in a different file. Just so I could use it as a reference
+		wifi_sendstring("AT+CIPSTART=\"TCP\",\"api.thingspeak.com\",80\r\n");
+		tim6_changeTimer(3000);
+	}
+	if (state == 4) {
+		wifi_sendstring("AT+CIPSEND=52\r\n");
+		tim6_changeTimer(1000);
+	}
+	if (state == 5)	{
+		wifi_sendstring("GET /update?api_key=2155L8AXXZLPF57M&field1=42\r\n\r\n\r\n");	}
+	if (state <= 5)
+		state++;
+*/
+
+
+
+
+
 
 /* Not Working
 void USART1_IRQHandler(void) {

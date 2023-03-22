@@ -8,9 +8,11 @@
 #include "stm32f0xx.h"
 #include "esp.h"
 #include "misc.h"
+#include <stdlib.h>
+#include "lcd_7in.h"
 
-
-//
+volatile int tim6semaphore = 0; //0 for wifi setup, 1 for http get request
+//Sets up the time synchronization for the device
 void setup_external_timesync() {
 
 
@@ -93,7 +95,6 @@ void setup_tim6() {
 	NVIC->ISER[0] = (1 << TIM6_DAC_IRQn);
 }
 
-volatile int state = 0;
 
 //will update the timers configuration to have a delay of ms
 // in milliseconds
@@ -109,7 +110,10 @@ void tim6_changeTimer(int ms) {
 
 }
 
-volatile int counter = 0;
+volatile int jiffy = 0;
+volatile int second = 0;
+volatile int minute = 0;
+volatile int hour = 0;
 
 //Deals with the external interrupt for the Timing Synchronization
 void EXTI4_15_IRQHandler(void) {
@@ -120,14 +124,37 @@ void EXTI4_15_IRQHandler(void) {
 		EXTI->PR |= EXTI_PR_PR15;
 
 
-		counter++;
-		int x = counter;
-		if (counter == 60){
-			counter = 0;
+		jiffy++;
+		if (jiffy == 60){
+			jiffy = 0;
 		}
 
 	}
 }
+
+void write_time(int second) {
+	textSetCursor(100, 150);
+	textEnlarge(2);
+	//char buff[] = "                  ";
+	//textWrite(buff, 15);
+	//textSetCursor(100, 150);
+
+	//itoa(second, buff, 10);
+
+	char time[8] = "00,00,00";
+	itoa(hour / 10,(&time[0]),10);
+	itoa(hour % 10,(&time[1]),10);
+	itoa(minute / 10,(&time[3]),10);
+	itoa(minute % 10,(&time[4]),10);
+	itoa(second / 10,(&time[6]),10);
+	itoa(second % 10,(&time[7]),10);
+	time[2] = ':';
+	time[5] = ':';
+	textWrite(time, 8);
+
+
+}
+
 
 //Deals with the external interrupt for the Timing Synchronization
 void EXTI0_1_IRQHandler(void) {
@@ -137,43 +164,91 @@ void EXTI0_1_IRQHandler(void) {
 		//acknowledge the interrupt
 		EXTI->PR |= EXTI_PR_PR0;
 
-		counter++;
-		int x = counter;
+		jiffy++;
 
-		if (counter == 60){
-			counter = 0;
+		//second
+		if (jiffy == 60){
+			jiffy = 0;
+			second++;
 			toggle_pin(GPIOC, 6);
+			write_time(second);
 		}
+		if (second == 60) {
+			second = 0;
+			minute++;
+		}
+		if (minute == 60) {
+			minute = 0;
+			hour = 0;
+		}
+
+
 
 	}
 }
+
+
+volatile int wifiInitialState = 0;
+volatile int wifiHTTPState = 0;
 
 void TIM6_DAC_IRQHandler(void) {
 	//Acknowledge the interrupt
 	TIM6->SR &= ~TIM_SR_UIF;
 
-	if (state == 0) {
-		wifi_sendstring("AT\r\n");
-	}
-	if (state == 1) {
-		wifi_sendstring("AT+CWMODE=3\r\n");
+	//wifi is initializing
+	if (tim6semaphore ==0) {
+		//check if the wifi device is connected
+		if (wifiInitialState == 0) {
+			wifi_sendstring("AT\r\n");
+		}
+		//set the moded to be an access point and a station
+		if (wifiInitialState == 1) {
+			wifi_sendstring("AT+CWMODE=3\r\n");
 
+		}
+		//connect to Wifi
+		if (wifiInitialState == 2) {
+			wifi_sendstring("AT+CWJAP=\"Xyz\",\"team4crib\"\r\n");
+			tim6_changeTimer(10000);
+		}
+		//set the timer 6 semaphore to the http get request mode
+		if (wifiInitialState == 3) {
+			tim6semaphore = 1;
+			tim6_changeTimer(500);
+		}
+		/*
+		if (wifiInitialState == 4) {
+			//wifi_sendstring("AT+CIPSEND=52\r\n");
+			tim6_changeTimer(1000);
+		}
+		if (wifiInitialState == 5)	{
+			//wifi_sendstring("GET /update?api_key=2155L8AXXZLPF57M&field1=42\r\n\r\n\r\n");
+		}
+		*/
+		if (wifiInitialState <= 5)
+			wifiInitialState++;
 	}
-	if (state == 2) {
-		wifi_sendstring("AT+CWJAP=\"Xyz\",\"team4crib\"\r\n");
-		tim6_changeTimer(10000);
+
+	//HTTP get requests
+	if (tim6semaphore == 1) {
+		char url[200] = "api.thingspeak.com/update?api_key=2155L8AXXZLPF57M&field1=53";
+		//connect the socket (AT+CIPSTART)
+		if (wifiHTTPState == 0) {
+			http_getrequest(url, 0);
+			tim6_changeTimer(3000);
+		}
+		//Send the number of bytes in the get request (AT+CIPSEND)
+		if (wifiHTTPState == 1) {
+			http_getrequest(url, 1);
+			tim6_changeTimer(1000);
+		}
+		//send the get request
+		if (wifiHTTPState == 2) {
+			http_getrequest(url, 2);
+		}
+		if (wifiHTTPState <= 2)
+			wifiHTTPState++;
 	}
-	if (state == 3) {
-		wifi_sendstring("AT+CIPSTART=\"TCP\",\"api.thingspeak.com\",80\r\n");
-		tim6_changeTimer(3000);
-	}
-	if (state == 4) {
-		wifi_sendstring("AT+CIPSEND=52\r\n");
-		tim6_changeTimer(1000);
-	}
-	if (state == 5)	{
-		wifi_sendstring("GET /update?api_key=2155L8AXXZLPF57M&field1=42\r\n\r\n\r\n");	}
-	if (state <= 5)
-		state++;
+
 
 }

@@ -11,7 +11,7 @@
 #include "RA8775_commands.h"
 
 
-int counter = 0;
+//int counter = 0;
 uint8_t _textScale;
 
 void nano_wait(unsigned int n) {
@@ -90,7 +90,7 @@ void setup_t_irq(void) {
 	NVIC_SetPriority(EXTI0_1_IRQn, 0);
 }
 
-
+/*
 void EXTI0_1_IRQHandler (void) {
     // acknowledge the interrupt
     EXTI->PR |= EXTI_PR_PR0;
@@ -101,10 +101,11 @@ void EXTI0_1_IRQHandler (void) {
 
     if (touched()) {
         touchRead(&tx, &ty);
-        /* Draw a circle */
+        // Draw a circle
         drawCircle((uint16_t)(tx/xScale), (uint16_t)(ty/yScale), 4, RA8875_WHITE, 1);
     }
 }
+*/
 
 // read RA8875 INT pin (A0)
 uint8_t ra8875INT()

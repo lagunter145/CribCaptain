@@ -25,9 +25,14 @@ int main(void)
 {
 
 
+
+	uint8_t x;
+	char string[15] = "Hello, World& ";
+
 	setup_uart1();
 	//setup_spi1();
 	setup_tim6();
+	/*
 	setup_devboard_leds();
 	setup_external_timesync();
 	set_pin(GPIOC, 6, 0);
@@ -35,6 +40,65 @@ int main(void)
 	set_pin(GPIOC, 8, 1);
 	//LCD_Init(0,0,0);
 	//LCD_Clear(BLACK);
+	*/
+
+	CS_HIGH;
+	RESET_LOW;
+	nano_wait(100000000);
+	RESET_HIGH;
+	nano_wait(100000000);
+
+	// setup functions
+	setup_spi1();
+
+	nano_wait(1000000);
+	x = readReg(0);
+	LCD_Init();
+	displayOn(1);
+	GPIOX(1);      // Enable TFT - display enable tied to GPIOX
+	PWM1config(1, RA8875_PWM_CLK_DIV1024); // PWM output for backlight
+	PWM1out(255);
+
+	// hardware accelerated drawing
+	fillScreen(GREEN);
+	drawRect(10, 10, 400, 200, RED, 1);
+	drawCircle(700, 400, 50, RA8875_BLUE, 1);
+
+
+	// switch to text mode
+	textMode();
+	cursorBlink(32);
+	textEnlarge(0);
+	textSetCursor(10, 10);
+	textColor(0x8170, RA8875_WHITE);
+	textWrite(string, 15);
+	textSetCursor(100, 150);
+	textEnlarge(2);
+	textWrite(string, 15);
+	char buff[] = "                  ";
+	textSetCursor(100, 150);
+
+	textWrite(buff, 15);
+	textSetCursor(100, 150);
+
+	setup_devboard_leds();
+	setup_external_timesync();
+	set_pin(GPIOC, 6, 0);
+	set_pin(GPIOC, 7, 1);
+	set_pin(GPIOC, 8, 1);
+
+
+
+	// switch back to graphics mode
+	//graphicsMode();
+
+	for(;;) {
+		nano_wait(100000000);
+	}
+
+
+
+
 
 	/*
 	simple_putchar('A');
@@ -139,12 +203,12 @@ int main(void)
 //	    if (!ra8875INT()){
 //	    if (touched()) {
 //	        touchRead(&tx, &ty);
-//	        /* Draw a circle */
+//	        // Draw a circle
 //	        drawCircle((uint16_t)(tx/xScale), (uint16_t)(ty/yScale), 4, RA8875_WHITE, 1);
 //	    }
 //	    }
 	}
-*/
+	*/
 
 }
 
