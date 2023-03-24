@@ -12,6 +12,15 @@
 #include "RA8775_commands.h"
 void nano_wait(unsigned int);
 
+typedef struct Button{
+    int x1;
+    int x2;
+    int y1;
+    int y2;
+    char label [10];
+    uint8_t pressed;
+    uint16_t color;
+} Button;
 
 extern uint8_t _textScale;
 

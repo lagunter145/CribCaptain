@@ -9,10 +9,11 @@
 #include <stdint.h>
 #include "lcd_7in.h"
 #include "RA8775_commands.h"
-
+#include "gui.h"
 
 int counter = 0;
 uint8_t _textScale;
+Button button1;
 
 void nano_wait(unsigned int n) {
     asm(    "        mov r0,%0\n"
@@ -94,15 +95,46 @@ void setup_t_irq(void) {
 void EXTI0_1_IRQHandler (void) {
     // acknowledge the interrupt
     EXTI->PR |= EXTI_PR_PR0;
-
+    uint8_t temp;
     uint16_t tx, ty;
+    uint16_t xc, yc;
     float xScale = 1024.0F/800;
     float yScale = 1024.0F/480;
 
     if (touched()) {
         touchRead(&tx, &ty);
         /* Draw a circle */
-        drawCircle((uint16_t)(tx/xScale), (uint16_t)(ty/yScale), 4, RA8875_WHITE, 1);
+        xc = (uint16_t)(tx/xScale);
+        yc = (uint16_t)(ty/yScale);
+        temp = button1.pressed;
+        button1.pressed = check_pressed(button1, xc, yc);
+        drawCircle(xc, yc, 4, RA8875_WHITE, 1);
+        if (button1.pressed == 0 && temp != button1.pressed){
+            counter++;
+            switch (counter % 7){
+            case 0:
+                update_button(button1, button1.x1, button1.y1, (button1.x2-button1.x1), (button1.y2-button1.y1), "", BLACK);
+                break;
+            case 1:
+                update_button(button1, button1.x1, button1.y1, (button1.x2-button1.x1), (button1.y2-button1.y1), "", BLUE);
+                break;
+            case 2:
+                update_button(button1, button1.x1, button1.y1, (button1.x2-button1.x1), (button1.y2-button1.y1), "", RED);
+                break;
+            case 3:
+                update_button(button1, button1.x1, button1.y1, (button1.x2-button1.x1), (button1.y2-button1.y1), "", CYAN);
+                break;
+            case 4:
+                update_button(button1, button1.x1, button1.y1, (button1.x2-button1.x1), (button1.y2-button1.y1), "", MAGENTA);
+                break;
+            case 5:
+                update_button(button1, button1.x1, button1.y1, (button1.x2-button1.x1), (button1.y2-button1.y1), "", YELLOW);
+                break;
+            case 6:
+                update_button(button1, button1.x1, button1.y1, (button1.x2-button1.x1), (button1.y2-button1.y1), "", WHITE);
+                break;
+            }
+        }
     }
 }
 

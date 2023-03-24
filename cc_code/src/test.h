@@ -8,7 +8,5 @@
 #ifndef TEST_H_
 #define TEST_H_
 
-void Display_Test(void);
-void Touch_Test(void);
 
 #endif /* TEST_H_ */
