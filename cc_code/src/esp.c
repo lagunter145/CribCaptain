@@ -53,6 +53,9 @@ void setup_uart1() {
 	//Enable the recieve not empty interrupt enable
 	//USART1->CR1 |= USART_CR1_RXNEIE;
 
+
+	//Set the peripheral register address in DMA_CPARx
+	//DMA1->CPAR[0] |= USART1;
 	//Enable DMA reciever access
 	//USART1->CR3 |= USART_CR3_DMAR;
 
@@ -67,7 +70,7 @@ void setup_uart1() {
 	while(!((USART1->ISR & USART_ISR_TEACK) && (USART1->ISR & USART_ISR_REACK)));
 
 	//Enable the DMA clock
-	RCC->AHBENR |= RCC_AHBENR_DMAEN;
+	//RCC->AHBENR |= RCC_AHBENR_DMAEN;
 	//
 
 }
@@ -87,7 +90,7 @@ uint8_t wifi_sendchar(int txChar) {
 	return txChar;
 }
 
-uint8_t wifi_getchar() {
+uint8_t wifi_getchar(void) {
 	//Wait for the USART5 ISR RXNE (read data register is not empty) bit to be set
 	while(!(USART1->ISR & USART_ISR_RXNE));
 	//return the value of the receive data register
@@ -119,7 +122,9 @@ void http_getrequest(char * uri, int requestState) {
 	char *url = strtok(uri, "/");
 	//get the resource information from the uri
 	char *resource = strtok(NULL," ");
-	int getLength = 5 + strlen(resource) + 6;
+	//int getLength = 5 + strlen(resource) + 6; // 5 for "GET /" + strlen(resource) for the resource + 9 for " HTTP/1.1" + 6 for "Host: " + 6 for all the newline and carriage return characters
+	int getLength = 5 + strlen(resource) + 9 + 6 + strlen(url) + 6;
+	//int getLength = 26 + 6 + 23 + 4;
 
 	//connect the to the ip of the server
 	if (requestState == 0) {
@@ -139,12 +144,28 @@ void http_getrequest(char * uri, int requestState) {
 
 	//send the get request
 	if (requestState == 2) {
+/*
 		//form the HTTP get request and send it
 		wifi_sendstring("GET /");
 		wifi_sendstring(resource);
 		wifi_sendstring("\r\n\r\n\r\n");
 		//write to the screen that it is done
 		textWrite(resource, strlen(resource));
+*/
+		//form the HTTP get request and send it
+		wifi_sendstring("GET /");
+		wifi_sendstring(resource);
+		wifi_sendstring(" HTTP/1.1\r\nHost: ");
+		wifi_sendstring(url);
+		wifi_sendstring("\r\n\r\n");
+		//write to the screen that it is done
+		textWrite(resource, strlen(resource));
+
+
+
+
+		//int getLength = 26 + 6 + 23 + 4;
+		//wifi_sendstring("GET /api/json/est/now HTTP/1.1\r\nHost: worldclockapi.com\r\n\r\n");
 	}
 
 }

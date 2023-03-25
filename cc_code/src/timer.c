@@ -232,6 +232,7 @@ void TIM6_DAC_IRQHandler(void) {
 	//HTTP get requests
 	if (tim6semaphore == 1) {
 		char url[200] = "api.thingspeak.com/update?api_key=2155L8AXXZLPF57M&field1=53";
+		//char url[200] = "worldclockapi.com/api/json/est/now";
 		//connect the socket (AT+CIPSTART)
 		if (wifiHTTPState == 0) {
 			http_getrequest(url, 0);
@@ -240,7 +241,7 @@ void TIM6_DAC_IRQHandler(void) {
 		//Send the number of bytes in the get request (AT+CIPSEND)
 		if (wifiHTTPState == 1) {
 			http_getrequest(url, 1);
-			tim6_changeTimer(1000);
+			tim6_changeTimer(500);
 		}
 		//send the get request
 		if (wifiHTTPState == 2) {

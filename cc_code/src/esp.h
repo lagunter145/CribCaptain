@@ -10,7 +10,7 @@
 
 void setup_uart1();
 uint8_t wifi_sendchar(int txChar);
-uint8_t wifi_getchar();
+uint8_t wifi_getchar(void);
 char * wifi_sendstring(char * cmd);
 char wifi_checkstring(char * response);
 void http_getrequest(char * uri, int requestState);

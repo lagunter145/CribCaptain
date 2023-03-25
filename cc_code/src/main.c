@@ -30,8 +30,13 @@ int main(void)
 	char string[15] = "Hello, World& ";
 
 	setup_uart1();
+	wifi_sendstring("AT\r\n");
+	uint8_t l = wifi_getchar();
+
+
+
 	//setup_spi1();
-	setup_tim6();
+	//setup_tim6();
 	/*
 	setup_devboard_leds();
 	setup_external_timesync();
@@ -86,6 +91,16 @@ int main(void)
 	set_pin(GPIOC, 6, 0);
 	set_pin(GPIOC, 7, 1);
 	set_pin(GPIOC, 8, 1);
+	char a = wifi_getchar();
+	textWrite(&a, 1);
+	char b = wifi_getchar();
+	textWrite(&b, 1);
+	char c = wifi_getchar();
+	textWrite(&c, 1);
+	char d = wifi_getchar();
+	textWrite(&d, 1);
+	char e = wifi_getchar();
+	textWrite(&e, 1);
 
 
 
