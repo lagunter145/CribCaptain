@@ -30,13 +30,13 @@ int main(void)
 	char string[15] = "Hello, World& ";
 
 	setup_uart1();
+
 	wifi_sendstring("AT\r\n");
-	uint8_t l = wifi_getchar();
-
-
+	wifi_checkstring("AT\r\r\n\r\nOK\r\n");
 
 	//setup_spi1();
 	//setup_tim6();
+
 	/*
 	setup_devboard_leds();
 	setup_external_timesync();
@@ -46,7 +46,7 @@ int main(void)
 	//LCD_Init(0,0,0);
 	//LCD_Clear(BLACK);
 	*/
-
+/*
 	CS_HIGH;
 	RESET_LOW;
 	nano_wait(100000000);
@@ -91,6 +91,7 @@ int main(void)
 	set_pin(GPIOC, 6, 0);
 	set_pin(GPIOC, 7, 1);
 	set_pin(GPIOC, 8, 1);
+	/*
 	char a = wifi_getchar();
 	textWrite(&a, 1);
 	char b = wifi_getchar();
@@ -101,7 +102,7 @@ int main(void)
 	textWrite(&d, 1);
 	char e = wifi_getchar();
 	textWrite(&e, 1);
-
+	*/
 
 
 	// switch back to graphics mode

@@ -31,7 +31,7 @@ void setup_uart1() {
 	GPIOA->AFR[1] |= 0x00000100; //Alternate function 1
 	//Configure PA11 as RESET
 	GPIOA->MODER &= ~GPIO_MODER_MODER11;
-	GPIOA->MODER |= GPIO_MODER_MODER10_0;  //output
+	GPIOA->MODER |= GPIO_MODER_MODER11_0;  //output
 	GPIOA->BSRR |= GPIO_BSRR_BS_11; //set the reset high
 	//Enable the RCC clock to the USART1 peripheral
 	RCC->APB2ENR |= RCC_APB2ENR_USART1EN;
@@ -39,7 +39,9 @@ void setup_uart1() {
 	//disable USART1
 	USART1->CR1 &= ~USART_CR1_UE;
 	//Set a Word Size of 8 bits
-	USART1->CR1 &= ~(USART_CR1_M | 0x10000000);
+	//USART1->CR1 &= ~(USART_CR1_M | 0x10000000);
+	USART1->CR1 &= ~USART_CR1_M;
+	USART1->CR1 &= ~(1<<28);
 	//Set it for one stop bit
 	USART1->CR2 &= ~USART_CR2_STOP;
 	//Set it for no parity
@@ -48,10 +50,10 @@ void setup_uart1() {
 	USART1->CR1 &= ~USART_CR1_OVER8;
 
 	//Not Working
-	//NVIC_EnableIRQ(USART1_IRQn);
-	//NVIC->ISER[0] = (1 << USART1_IRQn);
+	NVIC_EnableIRQ(USART1_IRQn);
+	NVIC->ISER[0] = (1 << USART1_IRQn);
 	//Enable the recieve not empty interrupt enable
-	//USART1->CR1 |= USART_CR1_RXNEIE;
+	USART1->CR1 |= USART_CR1_RXNEIE;
 
 
 	//Set the peripheral register address in DMA_CPARx
@@ -62,10 +64,11 @@ void setup_uart1() {
 	//Baud rate of 115200
 	USART1->BRR = 0;
 	USART1->BRR |= 0x1A1;
-	//Enable the transmitter and receiver
-	USART1->CR1 |= USART_CR1_RE | USART_CR1_TE;
 	//enable the USART1
 	USART1->CR1 |= USART_CR1_UE;
+	//Enable the transmitter and receiver
+	USART1->CR1 |= USART_CR1_RE | USART_CR1_TE;
+
 	//Wait for the TE and RE bits to be acknowledged
 	while(!((USART1->ISR & USART_ISR_TEACK) && (USART1->ISR & USART_ISR_REACK)));
 
@@ -81,7 +84,7 @@ void wifi_reset() {
 	GPIOA->BSRR |= GPIO_BSRR_BS_11; //sets the reset pin high
 }
 
-uint8_t wifi_sendchar(int txChar) {
+uint8_t wifi_sendchar(uint8_t txChar) {
 	//Wait for the USART5 ISR TXE (checks if the transmit data register is empty) to be set
 	while(!(USART1->ISR & USART_ISR_TXE));
 	//write the argunment to the USART TDR (transmit data register)
@@ -92,10 +95,12 @@ uint8_t wifi_sendchar(int txChar) {
 
 uint8_t wifi_getchar(void) {
 	//Wait for the USART5 ISR RXNE (read data register is not empty) bit to be set
+	//USART1->ICR |= USART_ICR_FECF;
 	while(!(USART1->ISR & USART_ISR_RXNE));
 	//return the value of the receive data register
-	return USART1->RDR;
 
+	uint8_t c = USART1->RDR;
+	return c;
 }
 
 char * wifi_sendstring(char * cmd) {
@@ -108,9 +113,11 @@ char * wifi_sendstring(char * cmd) {
 
 
 char wifi_checkstring(char * response) {
-
+	char buf[11];
 	for (int i = 0; i < strlen(response); i++) {
-		if (!(response[i] == wifi_getchar()))
+		uint8_t character = wifi_getchar();
+		buf[i] = character;
+		if (!(response[i] == character))
 			return 0;
 	}
 	return 1;
@@ -192,7 +199,7 @@ void http_getrequest(char * uri, int requestState) {
 
 
 
-/* Not Working
+///* Not Working
 void USART1_IRQHandler(void) {
 	uint8_t rxByte = 0;
 	if (USART1->ISR & USART_ISR_RXNE) {
@@ -200,5 +207,5 @@ void USART1_IRQHandler(void) {
 
 	}
 }
-*/
+//*/
 
