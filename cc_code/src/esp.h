@@ -14,4 +14,9 @@ uint8_t wifi_getchar(void);
 char * wifi_sendstring(char * cmd);
 char wifi_checkstring(char * response);
 void http_getrequest(char * uri, int requestState);
+void wifi_clearreadbuff(void);
+void wifi_parseresponse(char * http);
+
 #endif /* ESP_H_ */
+
+

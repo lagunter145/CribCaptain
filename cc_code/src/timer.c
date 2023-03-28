@@ -10,8 +10,14 @@
 #include "misc.h"
 #include <stdlib.h>
 #include "lcd_7in.h"
+#include "timer.h"
 
 volatile int tim6semaphore = 0; //0 for wifi setup, 1 for http get request
+
+volatile int jiffy = 0;
+volatile int second = 0;
+volatile int minute = 0;
+volatile int hour = 0;
 //Sets up the time synchronization for the device
 void setup_external_timesync() {
 
@@ -110,10 +116,6 @@ void tim6_changeTimer(int ms) {
 
 }
 
-volatile int jiffy = 0;
-volatile int second = 0;
-volatile int minute = 0;
-volatile int hour = 0;
 
 //Deals with the external interrupt for the Timing Synchronization
 void EXTI4_15_IRQHandler(void) {
@@ -142,8 +144,8 @@ void write_time(int second) {
 	//itoa(second, buff, 10);
 
 	char time[8] = "00,00,00";
-	itoa(hour / 10,(&time[0]),10);
-	itoa(hour % 10,(&time[1]),10);
+	itoa((hour % 12) / 10,(&time[0]),10);
+	itoa((hour % 12) % 10,(&time[1]),10);
 	itoa(minute / 10,(&time[3]),10);
 	itoa(minute % 10,(&time[4]),10);
 	itoa(second / 10,(&time[6]),10);
@@ -179,7 +181,7 @@ void EXTI0_1_IRQHandler(void) {
 		}
 		if (minute == 60) {
 			minute = 0;
-			hour = 0;
+			hour++;
 		}
 
 
@@ -231,8 +233,8 @@ void TIM6_DAC_IRQHandler(void) {
 
 	//HTTP get requests
 	if (tim6semaphore == 1) {
-		char url[200] = "api.thingspeak.com/update?api_key=2155L8AXXZLPF57M&field1=53";
-		//char url[200] = "worldclockapi.com/api/json/est/now";
+		//char url[200] = "api.thingspeak.com/update?api_key=2155L8AXXZLPF57M&field1=53";
+		char url[200] = "worldclockapi.com/api/json/est/now";
 		//connect the socket (AT+CIPSTART)
 		if (wifiHTTPState == 0) {
 			http_getrequest(url, 0);

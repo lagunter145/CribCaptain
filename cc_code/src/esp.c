@@ -12,9 +12,12 @@
 #include <string.h>
 #include "lcd_7in.h"
 #include <stdlib.h>
-
+#include "timer.h"
 
 char readBuffer[10];
+
+extern volatile int minute;
+extern volatile int hour;
 
 void setup_uart1() {
 	//Enable RCC clocks to GPIOA
@@ -166,7 +169,7 @@ void http_getrequest(char * uri, int requestState) {
 		wifi_sendstring(url);
 		wifi_sendstring("\r\n\r\n");
 		//write to the screen that it is done
-		textWrite(resource, strlen(resource));
+		//textWrite(resource, strlen(resource));
 
 
 
@@ -196,16 +199,97 @@ void http_getrequest(char * uri, int requestState) {
 
 
 
-
-
-
-///* Not Working
-void USART1_IRQHandler(void) {
-	uint8_t rxByte = 0;
-	if (USART1->ISR & USART_ISR_RXNE) {
-		rxByte = USART1->RDR;
-
-	}
+void wifi_parseresponse(char * http) {
+	char *response = strstr(http, "\r\n\r\n")+4;
+	char *datetime = strstr(response, "\"currentDateTime\":")+18;
+	char *time = strstr(datetime, "T")+1;
+	time[2] = '\0';
+	time[5] = '\0';
+	// might not work because passing indexing the string returns a char
+	// while atoi is expecting a pointer
+	//hour = atoi(&time[0])*10 + atoi();
+	//minute = atoi("3") * 10 + atoi("3");
+	hour = atoi(&time[0]);
+	minute = atoi(&time[3]);
 }
-//*/
+
+
+volatile char wifi_readbuff[10] = "";
+volatile char wifi_response[700];
+volatile char responseState = 0;
+volatile int responseBytesToGo = 0;
+volatile int responseBytesTotal = 0;
+
+void wifi_clearreadbuff(void) {
+	for (int i = 10; i > 0; i--)
+		wifi_readbuff[i] = '\0';
+}
+
+void USART1_IRQHandler(void) {
+	if (USART1->ISR & USART_ISR_RXNE) {
+		uint8_t rxByte = wifi_getchar();
+
+		//state machine to recognize "+IPD," and then the number that comes after it
+		//which is the size of the incoming HTTP response in bytes (including /n and /r)
+		switch(responseState) {
+			case 0 : if (rxByte == '+')responseState++;
+				else {responseState = 0;}
+				break;
+			case 1 : if (rxByte == 'I')responseState++;
+				else {responseState = 0;}
+				break;
+			case 2 : if (rxByte == 'P')responseState++;
+				else {responseState = 0;}
+				break;
+			case 3 : if (rxByte == 'D')responseState++;
+				else {responseState = 0;}
+				break;
+			case 4 : if (rxByte == ',')responseState++;
+				else {responseState = 0;}
+				break;
+			case 5 :;
+				//check the number of bytes that are needed to be read
+				int i;
+				for (i = 0; (rxByte != ':' && i < 10);  i++) {
+					wifi_readbuff[i] = rxByte;
+					rxByte = wifi_getchar();
+				}
+				wifi_readbuff[i] = '\0';
+				//get responseBytesToGo and responseBytesTotal from the string
+				responseBytesTotal = atoi(wifi_readbuff);
+				responseBytesToGo = responseBytesTotal;
+
+				//increment the state machine
+				responseState++;
+				break;
+			case 6 :
+				//reads the response one byte at a time
+				if (responseBytesToGo != 0) {
+					wifi_response[responseBytesTotal - responseBytesToGo] = rxByte;
+					responseBytesToGo--;
+				}
+				if (responseBytesToGo == 0) {
+					//textWrite(wifi_response, 537);
+
+					wifi_response[responseBytesTotal] = '\0';
+					//call some parsing function
+					wifi_parseresponse(wifi_response);
+
+					//hour = 5;
+					//minute = 10;
+					//fix state variables
+					responseState = 0;
+					responseBytesTotal = 0;
+
+					//clear wifi_readbuff
+					//wifi_clearreadbuff();
+					//USART1->RQR |= USART_RQR_RXFRQ;
+				}
+				break;
+			default: responseState = 0;
+		}
+	}
+
+}
+
 

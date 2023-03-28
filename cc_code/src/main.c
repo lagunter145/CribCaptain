@@ -10,9 +10,7 @@
 
 
 #include "stm32f0xx.h"
-//#include "lcd.h"
 #include "lcd_7in.h"
-//#include "touch.h"
 #include "test.h"
 #include <stdio.h>
 #include <stdint.h>
@@ -31,22 +29,20 @@ int main(void)
 
 	setup_uart1();
 
-	wifi_sendstring("AT\r\n");
-	wifi_checkstring("AT\r\r\n\r\nOK\r\n");
+	//wifi_sendstring("AT\r\n");
+	//wifi_checkstring("AT\r\r\n\r\nOK\r\n");
 
 	//setup_spi1();
-	//setup_tim6();
+	setup_tim6();
 
-	/*
+
 	setup_devboard_leds();
 	setup_external_timesync();
 	set_pin(GPIOC, 6, 0);
 	set_pin(GPIOC, 7, 1);
 	set_pin(GPIOC, 8, 1);
-	//LCD_Init(0,0,0);
-	//LCD_Clear(BLACK);
-	*/
-/*
+
+
 	CS_HIGH;
 	RESET_LOW;
 	nano_wait(100000000);
