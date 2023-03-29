@@ -173,16 +173,22 @@ void EXTI0_1_IRQHandler(void) {
 			jiffy = 0;
 			second++;
 			toggle_pin(GPIOC, 6);
+			if (second == 60) {
+				second = 0;
+				minute++;
+				//write_time(second);
+				if (minute == 60) {
+					minute = 0;
+					hour++;
+				}
+
+			}
 			write_time(second);
+
 		}
-		if (second == 60) {
-			second = 0;
-			minute++;
-		}
-		if (minute == 60) {
-			minute = 0;
-			hour++;
-		}
+
+
+
 
 
 
@@ -234,7 +240,10 @@ void TIM6_DAC_IRQHandler(void) {
 	//HTTP get requests
 	if (tim6semaphore == 1) {
 		//char url[200] = "api.thingspeak.com/update?api_key=2155L8AXXZLPF57M&field1=53";
-		char url[200] = "worldclockapi.com/api/json/est/now";
+		// ***** Maybe try worldtimeapi instead
+		// worldtimeapi.org/api/timezone/America/new_york.txt
+		//char url[200] = "worldclockapi.com/api/json/est/now";
+		char url[200] = "worldtimeapi.org/api/timezone/America/new_york.txt";
 		//connect the socket (AT+CIPSTART)
 		if (wifiHTTPState == 0) {
 			http_getrequest(url, 0);

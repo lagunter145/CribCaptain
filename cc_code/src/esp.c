@@ -18,6 +18,8 @@ char readBuffer[10];
 
 extern volatile int minute;
 extern volatile int hour;
+extern volatile int second;
+
 
 void setup_uart1() {
 	//Enable RCC clocks to GPIOA
@@ -200,6 +202,7 @@ void http_getrequest(char * uri, int requestState) {
 
 
 void wifi_parseresponse(char * http) {
+	/*//worldclockapi.com
 	char *response = strstr(http, "\r\n\r\n")+4;
 	char *datetime = strstr(response, "\"currentDateTime\":")+18;
 	char *time = strstr(datetime, "T")+1;
@@ -211,6 +214,20 @@ void wifi_parseresponse(char * http) {
 	//minute = atoi("3") * 10 + atoi("3");
 	hour = atoi(&time[0]);
 	minute = atoi(&time[3]);
+	*/
+
+	char *response = strstr(http, "\r\n\r\n")+4;
+	char *datetime = strstr(response, "datetime: ");
+	char *time = strstr(datetime, "T")+1;
+
+	time[2] = '\0';
+	time[5] = '\0';
+	time[8] = '\0';
+	hour = atoi(&time[0]);
+	minute = atoi(&time[3]);
+	second = atoi(&time[6]);
+
+
 }
 
 
