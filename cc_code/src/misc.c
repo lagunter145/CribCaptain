@@ -23,7 +23,7 @@ void setup_devboard_leds() {
 void setup_pcb_leds() {
 	//Enable RCC clocks to GPIOC
 	RCC->AHBENR |= RCC_AHBENR_GPIOAEN;
-	//Configure PA9-PC9 as output
+	//Configure PA5-PA8 as output
 	GPIOA->MODER &= ~(GPIO_MODER_MODER5 | GPIO_MODER_MODER6 | GPIO_MODER_MODER7 | GPIO_MODER_MODER8);
 	GPIOA->MODER |=   GPIO_MODER_MODER5_0 | GPIO_MODER_MODER6_0 | GPIO_MODER_MODER7_0 | GPIO_MODER_MODER8_0;
 

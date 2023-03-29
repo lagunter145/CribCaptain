@@ -22,8 +22,13 @@
 int main(void)
 {
 
+	setup_pcb_leds();
+	set_pin(GPIOA, 5, 1);
+	//setup_external_timesync();
 
+	//GPIOA->BSRR |= 1 << 5;
 
+	/*
 	uint8_t x;
 	char string[15] = "Hello, World& ";
 
@@ -87,6 +92,7 @@ int main(void)
 	set_pin(GPIOC, 6, 0);
 	set_pin(GPIOC, 7, 1);
 	set_pin(GPIOC, 8, 1);
+	*/
 	/*
 	char a = wifi_getchar();
 	textWrite(&a, 1);
