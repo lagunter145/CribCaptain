@@ -51,5 +51,7 @@ int main(void)
     success = readPassiveTargetID(PN532_MIFARE_ISO14443A, &uid[0], &uidLength, 0);
 
     printf("pass");
-
+    for(;;){
+    	;
+    }
 }

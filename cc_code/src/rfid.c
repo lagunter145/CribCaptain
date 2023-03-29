@@ -8,6 +8,8 @@
 #include "stm32f0xx.h"
 #include "rfid.h"
 
+uint8_t * rfid_tag[64];
+
 // USART5 was used from 362 Lab 10. I just copied over the initiation and
 // basic read/write functions.
 // According to the STM32F0 Reference Manual, USART5/6/7/8 are missing a
@@ -41,11 +43,59 @@ void init_usart5()
     USART5->CR1 &=~USART_CR1_OVER8; // use 16x oversampling
     USART5->BRR = 0;                // use baud rate 115200
     USART5->BRR |= 0x1a1;
+
+    //DMA 1 Channel 1 Setup
+	//enable DMA clock
+	RCC->AHBENR |= RCC_AHBENR_DMA1EN;
+	//enable DMA transfer and reception on USART5
+	USART5->CR3 |= USART_CR3_DMAT | USART_CR3_DMAR;
+	//set the peripheral register address in the DMA_CPARx register
+	DMA1_Channel1->CPAR = (uint32_t) (&(USART5->RDR));
+	//set the memory address in the DMA_CMARx
+	DMA1_Channel1->CMAR = (uint32_t) (rfid_tag);
+	//set the total size of the RFID string
+	//changed it to 1 just for testing purposes (Matt)
+	DMA1_Channel1->CNDTR = 1;
+
+	//configure NVIC for DMA
+	NVIC_EnableIRQ(DMA1_Channel1_IRQn);
+	//NVIC_SetPriority(DMA1_Channel1_IRQn,0);
+
+	//enable DMA interrupts
+	DMA1_Channel1->CCR &= ~(DMA_CCR_MSIZE | DMA_CCR_PSIZE); // 8 bit memory size and 8 bit peripheral size
+	DMA1_Channel1->CCR |= DMA_CCR_MINC; //memory increments after each transaction
+	DMA1_Channel1->CCR |= DMA_CCR_CIRC; //enable circular mode
+	DMA1_Channel1->CCR &= ~DMA_CCR_DIR; //data is read from the peripheral
+	DMA1_Channel1->CCR |= DMA_CCR_TCIE | DMA_CCR_TEIE; //enable interrupt on the transfer complete and error
+	DMA1->CSELR
+	//THE ENABLING OF THE DMA 1 IS IN SEPARATE FUNCTION
+
+
     USART5->CR1 |= USART_CR1_TE | USART_CR1_RE; // enable transmitter and receiver by setting TE and RE
     USART5->CR1 |= USART_CR1_UE;    // enable USART
     // check TEACK and REACK bits of ISR to be set
     while(!((USART5->ISR & USART_ISR_TEACK) && (USART5->ISR & USART_ISR_REACK)));
 }
+
+void enable_DMA1(void) {
+	//enable DMA channel 1
+	DMA1_Channel1->CCR |= DMA_CCR_EN;
+}
+
+void DMA1_CH1_IRQHandler(void) {
+	//check for full transfer
+	if (DMA1->ISR & DMA_ISR_TCIF1) {
+		//clears the interrupt for the full transfer
+		DMA1->IFCR |= DMA_IFCR_CTCIF1;
+
+		//Write to screen
+		int a = 1;
+	}
+}
+
+
+
+
 // is multibuffer communication needed? If so, must also enable DMA
 
 // overrun error (ORE bit) can occur if the RXNE flag is set when the next data is received.
@@ -393,10 +443,13 @@ int readPassiveTargetID(uint8_t cardbaudrate, uint8_t *uid, uint8_t *uidLength, 
         return 0x0;  // command failed
     }
 
+    /*
     // read data packet
     if (readResponse(pn532_packetbuffer, 64, 0) < 0) {
         return 0x0;
     }
+    */
+    enable_DMA1();
 
     // check some basic stuff
     /* ISO14443A card response should be in the following format:
@@ -409,24 +462,25 @@ int readPassiveTargetID(uint8_t cardbaudrate, uint8_t *uid, uint8_t *uidLength, 
       b5              NFCID Length
       b6..NFCIDLen    NFCID
     */
-
+    /*
     if (pn532_packetbuffer[0] != 1)
         return 0;
 
     uint16_t sens_res = pn532_packetbuffer[2];
     sens_res <<= 8;
     sens_res |= pn532_packetbuffer[3];
-
+	*/
     /*DMSG("ATQA: 0x");  DMSG_HEX(sens_res);
     DMSG("SAK: 0x");  DMSG_HEX(pn532_packetbuffer[4]);
     DMSG("\n");*/
 
     /* Card appears to be Mifare Classic */
+    /*
     *uidLength = pn532_packetbuffer[5];
 
     for (uint8_t i = 0; i < pn532_packetbuffer[5]; i++) {
         uid[i] = pn532_packetbuffer[6 + i];
     }
-
+    */
     return 1;
 }
