@@ -28,6 +28,7 @@ uint32_t writeRegister(uint16_t reg, uint8_t val);
 
 uint32_t getFirmwareVersion(void);
 int SAMConfig(void);
+uint8_t setPassiveActivationRetries(uint8_t maxRetries);
 int readPassiveTargetID(uint8_t cardbaudrate, uint8_t *uid, uint8_t *uidLength, uint16_t timeout);
 
 // Command Codes

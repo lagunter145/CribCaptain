@@ -8,7 +8,7 @@
 #include "stm32f0xx.h"
 #include "rfid.h"
 
-uint8_t * rfid_tag[64];
+uint8_t rfid_tag[20];
 
 // USART5 was used from 362 Lab 10. I just copied over the initiation and
 // basic read/write functions.
@@ -55,20 +55,23 @@ void init_usart5()
 	DMA1_Channel1->CMAR = (uint32_t) (rfid_tag);
 	//set the total size of the RFID string
 	//changed it to 1 just for testing purposes (Matt)
-	DMA1_Channel1->CNDTR = 1;
-
-	//configure NVIC for DMA
-	NVIC_EnableIRQ(DMA1_Channel1_IRQn);
-	//NVIC_SetPriority(DMA1_Channel1_IRQn,0);
+	DMA1_Channel1->CNDTR = 20;
 
 	//enable DMA interrupts
 	DMA1_Channel1->CCR &= ~(DMA_CCR_MSIZE | DMA_CCR_PSIZE); // 8 bit memory size and 8 bit peripheral size
 	DMA1_Channel1->CCR |= DMA_CCR_MINC; //memory increments after each transaction
 	DMA1_Channel1->CCR |= DMA_CCR_CIRC; //enable circular mode
 	DMA1_Channel1->CCR &= ~DMA_CCR_DIR; //data is read from the peripheral
-	DMA1_Channel1->CCR |= DMA_CCR_TCIE | DMA_CCR_TEIE; //enable interrupt on the transfer complete and error
-	DMA1->CSELR
+	DMA1_Channel1->CCR |= DMA_CCR_TCIE; //enable interrupt on the transfer complete and error
+
+	//select channel 1 on CxS 1100
+	uint32_t * DMA1_CSELR = (uint32_t *) ((uint32_t) DMA1 + 0xA8); //0x4002 00A8
+	*DMA1_CSELR |= 0xC;
+
 	//THE ENABLING OF THE DMA 1 IS IN SEPARATE FUNCTION
+	//configure NVIC for DMA
+	NVIC_EnableIRQ(DMA1_Channel1_IRQn);
+	NVIC_SetPriority(DMA1_Channel1_IRQn,0);
 
 
     USART5->CR1 |= USART_CR1_TE | USART_CR1_RE; // enable transmitter and receiver by setting TE and RE
@@ -80,6 +83,7 @@ void init_usart5()
 void enable_DMA1(void) {
 	//enable DMA channel 1
 	DMA1_Channel1->CCR |= DMA_CCR_EN;
+
 }
 
 void DMA1_CH1_IRQHandler(void) {
@@ -89,7 +93,8 @@ void DMA1_CH1_IRQHandler(void) {
 		DMA1->IFCR |= DMA_IFCR_CTCIF1;
 
 		//Write to screen
-		int a = 1;
+		uint8_t a =  rfid_tag[0];
+		printf("hello");
 	}
 }
 
@@ -418,6 +423,28 @@ int SAMConfig(void)
 
     if (writeCommand(pn532_packetbuffer, 4, NULL, 0))
         return 0;
+
+    return (0 < readResponse(pn532_packetbuffer, 64, 0));
+}
+
+/**************************************************************************/
+/*!
+    Sets the MxRtyPassiveActivation uint8_t of the RFConfiguration register
+    @param  maxRetries    0xFF to wait forever, 0x00..0xFE to timeout
+                          after mxRetries
+    @returns 1 if everything executed properly, 0 for an error
+*/
+/**************************************************************************/
+uint8_t setPassiveActivationRetries(uint8_t maxRetries)
+{
+    pn532_packetbuffer[0] = PN532_COMMAND_RFCONFIGURATION;
+    pn532_packetbuffer[1] = 5;    // Config item 5 (MaxRetries)
+    pn532_packetbuffer[2] = 0xFF; // MxRtyATR (default = 0xFF)
+    pn532_packetbuffer[3] = 0x01; // MxRtyPSL (default = 0x01)
+    pn532_packetbuffer[4] = maxRetries;
+
+    if (writeCommand(pn532_packetbuffer, 5, NULL, 0))
+        return 0x0;  // no ACK
 
     return (0 < readResponse(pn532_packetbuffer, 64, 0));
 }
