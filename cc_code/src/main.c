@@ -15,7 +15,8 @@
 #include <stdio.h>
 #include <stdint.h>
 			
-
+extern uint8_t rfid_tag[20];
+extern uint8_t uid_buf[7];
 int main(void)
 {
     /*
@@ -50,8 +51,9 @@ int main(void)
     uint8_t uid[] = { 0, 0, 0, 0, 0, 0, 0 };  // Buffer to store the returned UID
     uint8_t uidLength;                        // Length of the UID (4 or 7 bytes depending on ISO14443A card type)
 
-    success = readPassiveTargetID(PN532_MIFARE_ISO14443A, &uid[0], &uidLength, 0);
 
+    success = readPassiveTargetID(PN532_MIFARE_ISO14443A, &uid[0], &uidLength, 0);
+    enable_DMA1();
     printf("pass");
     for(;;){
     	;

@@ -9,6 +9,7 @@
 #include "rfid.h"
 
 uint8_t rfid_tag[20];
+uint8_t uid_buf[7];
 
 // USART5 was used from 362 Lab 10. I just copied over the initiation and
 // basic read/write functions.
@@ -30,6 +31,7 @@ void init_usart5()
     // config PD2 to be routed to USART5_RX (AF2)
     GPIOD->MODER &=~0x00000030;
     GPIOD->MODER |= 0x00000020;
+    GPIOD->PUPDR |= GPIO_PUPDR_PUPDR2_1;
     GPIOD->AFR[0] |=0x00000200;
     // enable RCC clock to USART5
     RCC->APB1ENR |= RCC_APB1ENR_USART5EN;
@@ -48,19 +50,19 @@ void init_usart5()
 	//enable DMA clock
 	RCC->AHBENR |= RCC_AHBENR_DMA1EN;
 	//enable DMA transfer and reception on USART5
-	USART5->CR3 |= USART_CR3_DMAT | USART_CR3_DMAR;
+	//USART5->CR3 |= USART_CR3_DMAT | USART_CR3_DMAR;
 	//set the peripheral register address in the DMA_CPARx register
 	DMA1_Channel1->CPAR = (uint32_t) (&(USART5->RDR));
 	//set the memory address in the DMA_CMARx
-	DMA1_Channel1->CMAR = (uint32_t) (rfid_tag);
+	DMA1_Channel1->CMAR = (uint32_t) (&rfid_tag[0]);
 	//set the total size of the RFID string
 	//changed it to 1 just for testing purposes (Matt)
-	DMA1_Channel1->CNDTR = 20;
+	DMA1_Channel1->CNDTR = 19;
 
 	//enable DMA interrupts
 	DMA1_Channel1->CCR &= ~(DMA_CCR_MSIZE | DMA_CCR_PSIZE); // 8 bit memory size and 8 bit peripheral size
 	DMA1_Channel1->CCR |= DMA_CCR_MINC; //memory increments after each transaction
-	DMA1_Channel1->CCR |= DMA_CCR_CIRC; //enable circular mode
+	//DMA1_Channel1->CCR |= DMA_CCR_CIRC; //enable circular mode
 	DMA1_Channel1->CCR &= ~DMA_CCR_DIR; //data is read from the peripheral
 	DMA1_Channel1->CCR |= DMA_CCR_TCIE; //enable interrupt on the transfer complete and error
 
@@ -82,6 +84,7 @@ void init_usart5()
 
 void enable_DMA1(void) {
 	//enable DMA channel 1
+    USART5->CR3 |= USART_CR3_DMAT | USART_CR3_DMAR;
 	DMA1_Channel1->CCR |= DMA_CCR_EN;
 
 }
@@ -92,9 +95,24 @@ void DMA1_CH1_IRQHandler(void) {
 		//clears the interrupt for the full transfer
 		DMA1->IFCR |= DMA_IFCR_CTCIF1;
 
-		//Write to screen
-		uint8_t a =  rfid_tag[0];
+		//uint8_t a =  rfid_tag[0];
+
+		uint16_t sens_res = rfid_tag[2];
+        sens_res <<= 8;
+        sens_res |= rfid_tag[3];
+
+        //*uidLength = pn532_packetbuffer[5];
+
+        for (uint8_t i = 0; i < rfid_tag[5]; i++) {
+            uid_buf[i] = rfid_tag[6 + i];
+        }
 		printf("hello");
+		DMA1_Channel1->CCR &= ~DMA_CCR_EN;
+		USART5->CR3 &= ~(USART_CR3_DMAT | USART_CR3_DMAR);
+		readPassiveTargetID(PN532_MIFARE_ISO14443A, NULL, NULL, 0);
+		USART5->CR3 |= USART_CR3_DMAT | USART_CR3_DMAR;
+		DMA1_Channel1->CNDTR = 19;
+	    DMA1_Channel1->CCR |= DMA_CCR_EN;
 	}
 }
 
@@ -476,7 +494,7 @@ int readPassiveTargetID(uint8_t cardbaudrate, uint8_t *uid, uint8_t *uidLength, 
         return 0x0;
     }
     */
-    enable_DMA1();
+
 
     // check some basic stuff
     /* ISO14443A card response should be in the following format:

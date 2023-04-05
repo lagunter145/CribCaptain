@@ -16,6 +16,7 @@ uint8_t command;
 
 // function declarations
 void init_usart5();
+void enable_DMA1();
 void write_byte(uint8_t c);
 uint8_t read_byte(void);
 int8_t receive(uint8_t * buf, int len, uint16_t timeout);
