@@ -30,8 +30,8 @@ void setup_spi1() {
 	RCC->AHBENR |= RCC_AHBENR_GPIOBEN;
 	// clear and set the MODER values for PB8,9,14 for outputs (01 in MODER)
 	// PB11 cleared and stays 0 to be input
-	GPIOB->MODER &= ~(GPIO_MODER_MODER8 | GPIO_MODER_MODER9| GPIO_MODER_MODER11 | GPIO_MODER_MODER14);
-	GPIOB->MODER |= (GPIO_MODER_MODER8_0 | GPIO_MODER_MODER9_0 | GPIO_MODER_MODER11_0 | GPIO_MODER_MODER14_0);
+	GPIOB->MODER &= ~(GPIO_MODER_MODER8 /*| GPIO_MODER_MODER9*/| GPIO_MODER_MODER11 | GPIO_MODER_MODER14);
+	GPIOB->MODER |= (GPIO_MODER_MODER8_0 /*| GPIO_MODER_MODER9_0*/ | GPIO_MODER_MODER11_0 | GPIO_MODER_MODER14_0);
 	// clear and set the MODER for PB3,4,5 for alternate functions (10 in MODER)
 	GPIOB->MODER &= ~(GPIO_MODER_MODER3 | GPIO_MODER_MODER4 | GPIO_MODER_MODER5);
 	GPIOB->MODER |= (GPIO_MODER_MODER3_1 | GPIO_MODER_MODER4_1| GPIO_MODER_MODER5_1);
@@ -72,40 +72,53 @@ void spi1_fast()
 
 // taken from A.6.2 (pg. 944)
 void setup_t_irq(void) {
+	/*
     // enable the SYSCFGCOMP for EXTI interrupts
 	RCC->APB2ENR |= RCC_APB2ENR_SYSCFGCOMPEN;
 	// Select Port A for pin 0 external interrupt by writing 0000 in EXTI0
-	SYSCFG->EXTICR[0] &= (uint16_t)~SYSCFG_EXTICR1_EXTI0_PA;
+	SYSCFG->EXTICR[0] &= (uint16_t)~SYSCFG_EXTICR1_EXTI0;
 	// Configure corresponding mask bit in the EXTI_IMR register (EXTI_IMR_MR0 = 0x0001)
 	// Writing 1 to corresponding mask bit in EXTI_IMR means "Interrupt request from Line x(0) is not masked"
 	// PA0 is on line 0 for EXTI0 (figure 25 on pg. 222)
-	EXTI->IMR = EXTI_IMR_MR0;
+	EXTI->IMR |= EXTI_IMR_MR0;
 	// Configure the Trigger Selection bits of the Interrupt line on falling edge (EXTI_FTSR_TR0 = 0x0001)
 	// Writing 1 to corresponding mask bit in EXTI_FTSR means "Falling trigger enabled (for Event and Interrupt) for input line"
-	EXTI->FTSR = EXTI_FTSR_TR0;
+	EXTI->FTSR |= EXTI_FTSR_TR0;
+	EXTI->RTSR &= ~EXTI_RTSR_TR0;
 	// Configure NVIC for External Interrupt
 	// Enable Interrupt on EXTI0_1
 	NVIC->ISER[0] |= 1 << EXTI0_1_IRQn;
 	// Set priority for EXTI0_1
 	NVIC_SetPriority(EXTI0_1_IRQn, 0);
+	*/
+	RCC->APB2ENR |= RCC_APB2ENR_SYSCFGCOMPEN;
+	SYSCFG->EXTICR[0] &= (uint16_t)~SYSCFG_EXTICR1_EXTI0;
+	EXTI->IMR |= EXTI_IMR_MR0;
+	EXTI->FTSR |= EXTI_FTSR_TR0;
+	NVIC->ISER[0] |= 1 << EXTI0_1_IRQn;
+	NVIC_SetPriority(EXTI0_1_IRQn, 1);
+
 }
 
-/*
+
 void EXTI0_1_IRQHandler (void) {
-    // acknowledge the interrupt
-    EXTI->PR |= EXTI_PR_PR0;
+    if (EXTI->PR & EXTI_PR_PR0) {
+		// acknowledge the interrupt
+		EXTI->PR |= EXTI_PR_PR0;
 
-    uint16_t tx, ty;
-    float xScale = 1024.0F/800;
-    float yScale = 1024.0F/480;
+		uint16_t tx, ty;
+		float xScale = 1024.0F/800;
+		float yScale = 1024.0F/480;
 
-    if (touched()) {
-        touchRead(&tx, &ty);
-        // Draw a circle
-        drawCircle((uint16_t)(tx/xScale), (uint16_t)(ty/yScale), 4, RA8875_WHITE, 1);
+		if (touched()) {
+			touchRead(&tx, &ty);
+			// Draw a circle
+			//graphicsMode();
+			drawCircle((uint16_t)(tx/xScale), (uint16_t)(ty/yScale), 4, RA8875_WHITE, 1);
+		}
     }
 }
-*/
+
 
 // read RA8875 INT pin (A0)
 uint8_t ra8875INT()
@@ -572,11 +585,12 @@ void textTransparent(uint16_t foreColor) {
 */
 /******************************************************/
 void textWrite(const char *buffer, uint16_t len) {
+
   LCD_WR_REG(RA8875_MRWC);
   for (uint16_t i = 0; i < len; i++) {
     LCD_WR_DATA(buffer[i]);
     if (_textScale > 0)
-      nano_wait(1000000);
+      nano_wait(100000);
   }
 }
 

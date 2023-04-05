@@ -23,14 +23,14 @@ int main(void)
 {
 
 	setup_pcb_leds();
-	set_pin(GPIOA, 5, 1);
-	//setup_external_timesync();
+	//set_pin(GPIOA, 5, 1);
+	setup_external_timesync();
 
 	//GPIOA->BSRR |= 1 << 5;
 
-	/*
+
 	uint8_t x;
-	char string[15] = "Hello, World& ";
+	char string[15] = "Hello, World!";
 
 	setup_uart1();
 
@@ -39,14 +39,6 @@ int main(void)
 
 	//setup_spi1();
 	setup_tim6();
-
-
-	setup_devboard_leds();
-	setup_external_timesync();
-	set_pin(GPIOC, 6, 0);
-	set_pin(GPIOC, 7, 1);
-	set_pin(GPIOC, 8, 1);
-
 
 	CS_HIGH;
 	RESET_LOW;
@@ -66,11 +58,12 @@ int main(void)
 	PWM1out(255);
 
 	// hardware accelerated drawing
-	fillScreen(GREEN);
+	fillScreen(BLACK);
 	drawRect(10, 10, 400, 200, RED, 1);
 	drawCircle(700, 400, 50, RA8875_BLUE, 1);
 
-
+	// enable touch
+	touchEnable(1);
 	// switch to text mode
 	textMode();
 	cursorBlink(32);
@@ -87,12 +80,20 @@ int main(void)
 	textWrite(buff, 15);
 	textSetCursor(100, 150);
 
-	setup_devboard_leds();
-	setup_external_timesync();
-	set_pin(GPIOC, 6, 0);
-	set_pin(GPIOC, 7, 1);
-	set_pin(GPIOC, 8, 1);
-	*/
+	graphicsMode();
+
+	//setup_devboard_leds();
+	//setup_external_timesync();
+	//set_pin(GPIOC, 6, 0);
+	//set_pin(GPIOC, 7, 1);
+	//set_pin(GPIOC, 8, 1);
+
+	setup_t_irq();
+
+
+
+
+
 	/*
 	char a = wifi_getchar();
 	textWrite(&a, 1);
@@ -109,9 +110,20 @@ int main(void)
 
 	// switch back to graphics mode
 	//graphicsMode();
-
+//	uint16_t tx, ty;
+//	float xScale = 1024.0F/800;
+//	float yScale = 1024.0F/480;
 	for(;;) {
-		nano_wait(100000000);
+		//nano_wait(100000000);
+//		if (!ra8875INT()) {
+//			if (touched()) {
+//			touchRead(&tx, &ty);
+//			// Draw a circle
+//			graphicsMode();
+//			drawCircle((uint16_t)(tx/xScale), (uint16_t)(ty/yScale), 4, RA8875_WHITE, 1);
+			//textMode();
+//			}
+//		}
 	}
 
 

@@ -21,7 +21,7 @@ volatile int hour = 0;
 //Sets up the time synchronization for the device
 void setup_external_timesync() {
 
-
+	/*
 	//Enable SYSCFG bit in RCC register
 	RCC->APB2ENR |= RCC_APB2ENR_SYSCFGCOMPEN;
 
@@ -44,8 +44,8 @@ void setup_external_timesync() {
 
 	//enable external interrupt on pin 0
 	NVIC->ISER[0] = (1 << EXTI0_1_IRQn);
-
-	/*
+	*/
+	///*
 
 
 	//Enable SYSCFG bit in RCC register
@@ -53,24 +53,24 @@ void setup_external_timesync() {
 	//Enable RCC clocks to GPIOC
 	RCC->AHBENR |= RCC_AHBENR_GPIOCEN;
 	//Configure PC15  as Input
-	GPIOC->MODER &= ~GPIO_MODER_MODER15;
+	GPIOC->MODER &= ~GPIO_MODER_MODER13;
 
 	//sets external interrupt for pin 15 to gpio c
-	SYSCFG->EXTICR[3] &= ~SYSCFG_EXTICR4_EXTI15;
-	SYSCFG->EXTICR[3] |= SYSCFG_EXTICR4_EXTI15_PC;
+	SYSCFG->EXTICR[3] &= ~SYSCFG_EXTICR4_EXTI13;
+	SYSCFG->EXTICR[3] |= SYSCFG_EXTICR4_EXTI13_PC;
 
 	//rising edge trigger enabled for pin 0
-	EXTI->RTSR |= EXTI_RTSR_TR15;
+	EXTI->RTSR |= EXTI_RTSR_TR13;
 	//disable falling edge trigger
-	EXTI->FTSR &= ~EXTI_FTSR_TR15;
+	EXTI->FTSR &= ~EXTI_FTSR_TR13;
 
 	//make the interrupt not masked
-	EXTI->IMR |= EXTI_IMR_MR15;
+	EXTI->IMR |= EXTI_IMR_MR13;
 
 	//enable external interrupt on pin 0
-	NVIC->ISER[0] = (1 << EXTI4_15_IRQn);
+	NVIC->ISER[0] |= (1 << EXTI4_15_IRQn);
 
-	*/
+	//*/
 
 
 }
@@ -116,27 +116,17 @@ void tim6_changeTimer(int ms) {
 
 }
 
-
-//Deals with the external interrupt for the Timing Synchronization
-void EXTI4_15_IRQHandler(void) {
-
-	//Check if the interrupt is the Timing Sychronization
-	if (EXTI->PR & EXTI_PR_PR15) {
-		//acknowledge the interrupt
-		EXTI->PR |= EXTI_PR_PR15;
-
-
-		jiffy++;
-		if (jiffy == 60){
-			jiffy = 0;
-		}
-
-	}
+void tim6_triggerInterrupt(void) {
+	//Disable the TIM6 by reseting the CEN bit in CR1
+	TIM6->CR1 &= ~TIM_CR1_CEN;
+	//set the TIM6 counter to the auto-reload register, so it triggers the timer interrupt automatically
+	TIM6->CNT = TIM6->ARR;
+	//Enable TIM6 by setting the CEN bit in CR1
+	TIM6->CR1 |= TIM_CR1_CEN;
 }
 
 void write_time(int second) {
-	textSetCursor(100, 150);
-	textEnlarge(2);
+
 	//char buff[] = "                  ";
 	//textWrite(buff, 15);
 	//textSetCursor(100, 150);
@@ -152,12 +142,49 @@ void write_time(int second) {
 	itoa(second % 10,(&time[7]),10);
 	time[2] = ':';
 	time[5] = ':';
+	textMode();
+	textSetCursor(100, 150);
+	textEnlarge(2);
+	textColor(0x8170, RA8875_WHITE);
 	textWrite(time, 8);
-
+	graphicsMode();
 
 }
 
+//Deals with the external interrupt for the Timing Synchronization
+void EXTI4_15_IRQHandler(void) {
 
+	//Check if the interrupt is the Timing Sychronization
+	if (EXTI->PR & EXTI_PR_PR13) {
+		//acknowledge the interrupt
+		EXTI->PR |= EXTI_PR_PR13;
+
+		jiffy++;
+
+		//second
+		if (jiffy == 60){
+			jiffy = 0;
+			second++;
+			toggle_pin(GPIOA, 5);
+			if (second == 60) {
+				second = 0;
+				minute++;
+				if (minute == 60) {
+					minute = 0;
+					hour++;
+				}
+
+			}
+			write_time(second);
+
+		}
+
+	}
+}
+
+
+
+/*
 //Deals with the external interrupt for the Timing Synchronization
 void EXTI0_1_IRQHandler(void) {
 
@@ -187,14 +214,9 @@ void EXTI0_1_IRQHandler(void) {
 
 		}
 
-
-
-
-
-
 	}
 }
-
+*/
 
 volatile int wifiInitialState = 0;
 volatile int wifiHTTPState = 0;
@@ -205,6 +227,7 @@ void TIM6_DAC_IRQHandler(void) {
 
 	//wifi is initializing
 	if (tim6semaphore ==0) {
+
 		//check if the wifi device is connected
 		if (wifiInitialState == 0) {
 			wifi_sendstring("AT\r\n");
@@ -212,17 +235,16 @@ void TIM6_DAC_IRQHandler(void) {
 		//set the moded to be an access point and a station
 		if (wifiInitialState == 1) {
 			wifi_sendstring("AT+CWMODE=3\r\n");
-
 		}
 		//connect to Wifi
 		if (wifiInitialState == 2) {
 			wifi_sendstring("AT+CWJAP=\"Xyz\",\"team4crib\"\r\n");
-			tim6_changeTimer(10000);
+			tim6_changeTimer(11000);
 		}
 		//set the timer 6 semaphore to the http get request mode
 		if (wifiInitialState == 3) {
 			tim6semaphore = 1;
-			tim6_changeTimer(500);
+			tim6_changeTimer(1000);
 		}
 		/*
 		if (wifiInitialState == 4) {
@@ -232,9 +254,37 @@ void TIM6_DAC_IRQHandler(void) {
 		if (wifiInitialState == 5)	{
 			//wifi_sendstring("GET /update?api_key=2155L8AXXZLPF57M&field1=42\r\n\r\n\r\n");
 		}
-		*/
+		 */
 		if (wifiInitialState <= 5)
 			wifiInitialState++;
+		/*
+		if (wifiInitialState == 0) {
+			textMode();
+			textSetCursor(100, 150);
+			textEnlarge(2);
+			textColor(0x8170, RA8875_WHITE);
+			textWrite("State 1!", 8);
+			tim6_changeTimer(11000);
+		}
+		if (wifiInitialState == 1) {
+			textMode();
+			textSetCursor(100, 150);
+			textEnlarge(2);
+			textColor(0x8170, RA8875_WHITE);
+			textWrite("State 2!", 8);
+			tim6_changeTimer(11000);
+		}
+		if (wifiInitialState == 2) {
+			textMode();
+			textSetCursor(100, 150);
+			textEnlarge(2);
+			textColor(0x8170, RA8875_WHITE);
+			textWrite("State 3!", 8);
+			tim6_changeTimer(11000);
+		}
+		if (wifiInitialState <= 5)
+			wifiInitialState++;
+		*/
 	}
 
 	//HTTP get requests
@@ -247,7 +297,7 @@ void TIM6_DAC_IRQHandler(void) {
 		//connect the socket (AT+CIPSTART)
 		if (wifiHTTPState == 0) {
 			http_getrequest(url, 0);
-			tim6_changeTimer(3000);
+			tim6_changeTimer(4000);
 		}
 		//Send the number of bytes in the get request (AT+CIPSEND)
 		if (wifiHTTPState == 1) {
