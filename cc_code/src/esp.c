@@ -19,6 +19,9 @@ char readBuffer[10];
 extern volatile int minute;
 extern volatile int hour;
 extern volatile int second;
+extern volatile int wifiHTTPState;
+extern volatile int wifiInitialState;
+extern volatile int tim6semaphore;
 
 
 void setup_uart1() {
@@ -217,8 +220,8 @@ void wifi_parseresponse(char * http) {
 	*/
 
 	char *response = strstr(http, "\r\n\r\n")+4;
-	char *datetime = strstr(response, "datetime: ");
-	char *time = strstr(datetime, "T")+1;
+	char *datetime = strstr(response, "datetime");
+	char *time = strstr(datetime, " ")+1;
 
 	time[2] = '\0';
 	time[5] = '\0';
@@ -233,7 +236,8 @@ void wifi_parseresponse(char * http) {
 
 volatile char wifi_readbuff[10] = "";
 volatile char wifi_response[700];
-volatile char responseState = 0;
+volatile char responseStateIPD = 0;
+volatile char responseStateOK = 0;
 volatile int responseBytesToGo = 0;
 volatile int responseBytesTotal = 0;
 
@@ -248,21 +252,21 @@ void USART1_IRQHandler(void) {
 
 		//state machine to recognize "+IPD," and then the number that comes after it
 		//which is the size of the incoming HTTP response in bytes (including /n and /r)
-		switch(responseState) {
-			case 0 : if (rxByte == '+')responseState++;
-				else {responseState = 0;}
+		switch(responseStateIPD) {
+			case 0 : if (rxByte == '+')responseStateIPD++;
+				else {responseStateIPD = 0;}
 				break;
-			case 1 : if (rxByte == 'I')responseState++;
-				else {responseState = 0;}
+			case 1 : if (rxByte == 'I')responseStateIPD++;
+				else {responseStateIPD = 0;}
 				break;
-			case 2 : if (rxByte == 'P')responseState++;
-				else {responseState = 0;}
+			case 2 : if (rxByte == 'P')responseStateIPD++;
+				else {responseStateIPD = 0;}
 				break;
-			case 3 : if (rxByte == 'D')responseState++;
-				else {responseState = 0;}
+			case 3 : if (rxByte == 'D')responseStateIPD++;
+				else {responseStateIPD = 0;}
 				break;
-			case 4 : if (rxByte == ',')responseState++;
-				else {responseState = 0;}
+			case 4 : if (rxByte == ',')responseStateIPD++;
+				else {responseStateIPD = 0;}
 				break;
 			case 5 :;
 				//check the number of bytes that are needed to be read
@@ -277,7 +281,7 @@ void USART1_IRQHandler(void) {
 				responseBytesToGo = responseBytesTotal;
 
 				//increment the state machine
-				responseState++;
+				responseStateIPD++;
 				break;
 			case 6 :
 				//reads the response one byte at a time
@@ -295,7 +299,7 @@ void USART1_IRQHandler(void) {
 					//hour = 5;
 					//minute = 10;
 					//fix state variables
-					responseState = 0;
+					responseStateIPD = 0;
 					responseBytesTotal = 0;
 
 					//clear wifi_readbuff
@@ -303,7 +307,46 @@ void USART1_IRQHandler(void) {
 					//USART1->RQR |= USART_RQR_RXFRQ;
 				}
 				break;
-			default: responseState = 0;
+			default: responseStateIPD = 0;
+		}
+
+		switch(responseStateOK) {
+					case 0 : if (rxByte == '\r' || rxByte == '\n')responseStateOK++;
+						else {responseStateOK = 0;}
+						break;
+					case 1 : if (rxByte == '\r' || rxByte == '\n')responseStateOK++;
+						else {responseStateOK = 0;}
+						break;
+					case 2 : if (rxByte == 'O')responseStateOK++;
+						else if (rxByte == '\r' || rxByte == '\n')responseStateOK=2;
+						else {responseStateOK = 0;}
+						break;
+					case 3 : if (rxByte == 'K')responseStateOK++;
+						else {responseStateOK = 0;}
+						break;
+					case 4 : if (rxByte == '\r' || rxByte == '\n')responseStateOK++;
+						else {responseStateOK = 0;}
+						break;
+					case 5 : if (rxByte == '\r' || rxByte == '\n')responseStateOK++;
+						else {responseStateOK = 0;}
+						//recognized that an OK has been received
+
+						//if wifi is in initialization state, then increment the wifi initial state
+						//and trigger the timer 6 interrupt
+						if (tim6semaphore == 0) {
+							wifiInitialState++;
+							tim6_triggerInterrupt();
+						}
+						//if wifi is in initialization state, then increment the wifi http state
+						//and trigger the timer 6 interrupt
+						if (tim6semaphore == 1) {
+							wifiHTTPState++;
+							tim6_triggerInterrupt();
+						}
+						//reset the response state variable
+						responseStateOK = 0;
+						break;
+			default: responseStateOK = 0;
 		}
 	}
 

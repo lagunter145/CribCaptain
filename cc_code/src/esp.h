@@ -16,6 +16,7 @@ char wifi_checkstring(char * response);
 void http_getrequest(char * uri, int requestState);
 void wifi_clearreadbuff(void);
 void wifi_parseresponse(char * http);
+void tim6_triggerInterrupt(void);
 
 #endif /* ESP_H_ */
 

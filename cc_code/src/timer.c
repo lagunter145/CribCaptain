@@ -69,7 +69,7 @@ void setup_external_timesync() {
 
 	//enable external interrupt on pin 0
 	NVIC->ISER[0] |= (1 << EXTI4_15_IRQn);
-
+	NVIC_SetPriority(EXTI4_15_IRQn, 0);
 	//*/
 
 
@@ -99,6 +99,7 @@ void setup_tim6() {
 
 	//Enable the interrupt for Timer 6 in the NVIC ISER
 	NVIC->ISER[0] = (1 << TIM6_DAC_IRQn);
+	//NVIC_SetPriority(TIM6_DAC_IRQn, 1);
 }
 
 
@@ -169,6 +170,7 @@ void EXTI4_15_IRQHandler(void) {
 			if (second == 60) {
 				second = 0;
 				minute++;
+				//write_time(second);
 				if (minute == 60) {
 					minute = 0;
 					hour++;
@@ -177,7 +179,9 @@ void EXTI4_15_IRQHandler(void) {
 			}
 			write_time(second);
 
+
 		}
+
 
 	}
 }
@@ -227,51 +231,45 @@ void TIM6_DAC_IRQHandler(void) {
 
 	//wifi is initializing
 	if (tim6semaphore ==0) {
-
 		//check if the wifi device is connected
 		if (wifiInitialState == 0) {
 			wifi_sendstring("AT\r\n");
+			//tim6_changeTimer(11000);
+
 		}
 		//set the moded to be an access point and a station
 		if (wifiInitialState == 1) {
 			wifi_sendstring("AT+CWMODE=3\r\n");
+			tim6_changeTimer(11000);
+
 		}
 		//connect to Wifi
 		if (wifiInitialState == 2) {
 			wifi_sendstring("AT+CWJAP=\"Xyz\",\"team4crib\"\r\n");
-			tim6_changeTimer(11000);
+			tim6_changeTimer(30000);
 		}
 		//set the timer 6 semaphore to the http get request mode
 		if (wifiInitialState == 3) {
 			tim6semaphore = 1;
-			tim6_changeTimer(1000);
-		}
-		/*
-		if (wifiInitialState == 4) {
-			//wifi_sendstring("AT+CIPSEND=52\r\n");
-			tim6_changeTimer(1000);
-		}
-		if (wifiInitialState == 5)	{
-			//wifi_sendstring("GET /update?api_key=2155L8AXXZLPF57M&field1=42\r\n\r\n\r\n");
-		}
-		 */
-		if (wifiInitialState <= 5)
+			tim6_changeTimer(11000);
 			wifiInitialState++;
+		}
+
+
+		//if (wifiInitialState <= 5)
+			//wifiInitialState++;
+
 		/*
 		if (wifiInitialState == 0) {
+			tim6_changeTimer(2000);
+		}
+		if (wifiInitialState == 1) {
 			textMode();
 			textSetCursor(100, 150);
 			textEnlarge(2);
 			textColor(0x8170, RA8875_WHITE);
 			textWrite("State 1!", 8);
-			tim6_changeTimer(11000);
-		}
-		if (wifiInitialState == 1) {
-			textMode();
-			textSetCursor(100, 150);
-			textEnlarge(2);
-			textColor(0x8170, RA8875_WHITE);
-			textWrite("State 2!", 8);
+			graphicsMode();
 			tim6_changeTimer(11000);
 		}
 		if (wifiInitialState == 2) {
@@ -279,12 +277,24 @@ void TIM6_DAC_IRQHandler(void) {
 			textSetCursor(100, 150);
 			textEnlarge(2);
 			textColor(0x8170, RA8875_WHITE);
+			textWrite("State 2!", 8);
+			graphicsMode();
+			tim6_changeTimer(11000);
+			tim6_triggerInterrupt();
+		}
+		if (wifiInitialState == 3) {
+			textMode();
+			textSetCursor(100, 150);
+			textEnlarge(2);
+			textColor(0x8170, RA8875_WHITE);
 			textWrite("State 3!", 8);
+			graphicsMode();
 			tim6_changeTimer(11000);
 		}
 		if (wifiInitialState <= 5)
 			wifiInitialState++;
 		*/
+
 	}
 
 	//HTTP get requests
@@ -293,23 +303,27 @@ void TIM6_DAC_IRQHandler(void) {
 		// ***** Maybe try worldtimeapi instead
 		// worldtimeapi.org/api/timezone/America/new_york.txt
 		//char url[200] = "worldclockapi.com/api/json/est/now";
-		char url[200] = "worldtimeapi.org/api/timezone/America/new_york.txt";
+		//char url[200] = "worldtimeapi.org/api/timezone/America/new_york.txt";
+		//char url[200] = "timeapi.io/api/Time/current/zone?timeZone=America/Indiana/Indianapolis";
+		char url[200] = "timezone.abstractapi.com/v1/current_time/?api_key=9e51598312064a7494ae4b60562fbc71&location=Indianapolis";
+
 		//connect the socket (AT+CIPSTART)
 		if (wifiHTTPState == 0) {
 			http_getrequest(url, 0);
-			tim6_changeTimer(4000);
+			//tim6_changeTimer(4000);
 		}
 		//Send the number of bytes in the get request (AT+CIPSEND)
 		if (wifiHTTPState == 1) {
 			http_getrequest(url, 1);
-			tim6_changeTimer(500);
+			//tim6_changeTimer(500);
 		}
 		//send the get request
 		if (wifiHTTPState == 2) {
 			http_getrequest(url, 2);
-		}
-		if (wifiHTTPState <= 2)
 			wifiHTTPState++;
+		}
+		//if (wifiHTTPState <= 2)
+			//wifiHTTPState++;
 	}
 
 
