@@ -95,18 +95,31 @@ void DMA1_CH1_IRQHandler(void) {
 		//clears the interrupt for the full transfer
 		DMA1->IFCR |= DMA_IFCR_CTCIF1;
 
+		// rfid_tag[] first 7? bytes will be preambles and checksums
+
+		/* ISO14443A card response should be in the following format:
+          byte            Description
+          -------------   ------------------------------------------
+          b7              Tags Found
+          b8              Tag Number (only one used in this example)
+          b9..10          SENS_RES
+          b11             SEL_RES
+          b12             NFCID Length
+          b13..NFCIDLen   NFCID
+        */
+
 		//uint8_t a =  rfid_tag[0];
 
-		uint16_t sens_res = rfid_tag[2];
+		uint16_t sens_res = rfid_tag[9];
         sens_res <<= 8;
-        sens_res |= rfid_tag[3];
+        sens_res |= rfid_tag[10];
 
         //*uidLength = pn532_packetbuffer[5];
 
-        for (uint8_t i = 0; i < rfid_tag[5]; i++) {
-            uid_buf[i] = rfid_tag[6 + i];
+        for (uint8_t i = 0; i < rfid_tag[12]; i++) {
+            uid_buf[i] = rfid_tag[13 + i];
         }
-		printf("hello");
+
 		DMA1_Channel1->CCR &= ~DMA_CCR_EN;
 		USART5->CR3 &= ~(USART_CR3_DMAT | USART_CR3_DMAR);
 		readPassiveTargetID(PN532_MIFARE_ISO14443A, NULL, NULL, 0);
