@@ -177,16 +177,14 @@ int8_t receive(uint8_t *buf, int len, uint16_t timeout)
 {
   int read_bytes = 0;
   uint8_t ret;
-  //unsigned long start_millis;
 
   while (read_bytes < len) {
-    //start_millis = millis();
     do {
       ret = read_byte();
       if (ret >= 0) {
         break;
      }
-    } while((timeout == 0) /*|| ((millis()- start_millis ) < timeout)*/);
+    } while((timeout == 0));
 
    if (ret < 0) {
         if(read_bytes){
@@ -196,7 +194,6 @@ int8_t receive(uint8_t *buf, int len, uint16_t timeout)
         }
     }
     buf[read_bytes] = (uint8_t)ret;
-    //DMSG_HEX(ret);
     read_bytes++;
   }
   return read_bytes;
@@ -205,17 +202,13 @@ int8_t receive(uint8_t *buf, int len, uint16_t timeout)
 int8_t readAckFrame()
 {
     const uint8_t PN532_ACK[] = {0, 0, 0xFF, 0, 0xFF, 0};
-    uint8_t ackBuf[6/*sizeof(PN532_ACK)*/];
+    uint8_t ackBuf[6];
 
-    //DMSG("\nAck: ");
-
-    if( receive(ackBuf, 6 /*sizeof(PN532_ACK)*/, 0 /*PN532_ACK_WAIT_TIME*/) <= 0 ){
-        //DMSG("Timeout\n");
+    if( receive(ackBuf, 6, 0) <= 0 ){
         return PN532_TIMEOUT;
     }
 
-    if( memcmp(ackBuf, PN532_ACK, 6 /*sizeof(PN532_ACK)*/) ){
-        //DMSG("Invalid\n");
+    if( memcmp(ackBuf, PN532_ACK, 6) ){
         return PN532_INVALID_ACK;
     }
     return 0;
@@ -224,11 +217,6 @@ int8_t readAckFrame()
 int8_t writeCommand(const uint8_t *header, uint8_t hlen, const uint8_t *body, uint8_t blen)
 {
 
-    /** dump serial buffer
-    if(_serial->available()){
-        DMSG("Dump serial buffer: ");
-    }
-    */
     while(USART5->ISR & USART_ISR_RXNE){
         uint8_t ret = USART5->RDR;
     }
@@ -246,14 +234,10 @@ int8_t writeCommand(const uint8_t *header, uint8_t hlen, const uint8_t *body, ui
     write_byte(PN532_HOSTTOPN532);
     uint8_t sum = PN532_HOSTTOPN532;    // sum of TFI + DATA
 
-    //DMSG("\nWrite: ");
-
     for(int i = 0; i < hlen; i++) {
         write_byte(header[i]);
     }    for (uint8_t i = 0; i < hlen; i++) {
         sum += header[i];
-
-        //DMSG_HEX(header[i]);
     }
 
     for(int j = 0; j < blen; j++) {
@@ -261,8 +245,6 @@ int8_t writeCommand(const uint8_t *header, uint8_t hlen, const uint8_t *body, ui
     }
     for (uint8_t i = 0; i < blen; i++) {
         sum += body[i];
-
-        //DMSG_HEX(body[i]);
     }
 
     uint8_t checksum = ~sum + 1;            // checksum of TFI + DATA
@@ -277,24 +259,20 @@ int16_t readResponse(uint8_t * buf, uint8_t len, uint16_t timeout)
 {
     uint8_t tmp[3];
 
-    //DMSG("\nRead:  ");
-
-    /** Frame Preamble and Start Code */
+    // Frame Preamble and Start Code
     if(receive(tmp, 3, timeout)<=0){
         return PN532_TIMEOUT;
     }
     if(0 != tmp[0] || 0!= tmp[1] || 0xFF != tmp[2]){
-        //DMSG("Preamble error");
         return PN532_INVALID_FRAME;
     }
 
-    /** receive length and check */
+    // receive length and check
     uint8_t length[2];
     if(receive(length, 2, timeout) <= 0){
         return PN532_TIMEOUT;
     }
     if( 0 != (uint8_t)(length[0] + length[1]) ){
-        //DMSG("Length error");
         return PN532_INVALID_FRAME;
     }
     length[0] -= 2;
@@ -302,13 +280,12 @@ int16_t readResponse(uint8_t * buf, uint8_t len, uint16_t timeout)
         return PN532_NO_SPACE;
     }
 
-    /** receive command byte */
+    // receive command byte
     uint8_t cmd = command + 1;               // response command
     if(receive(tmp, 2, timeout) <= 0){
         return PN532_TIMEOUT;
     }
     if( PN532_PN532TOHOST != tmp[0] || cmd != tmp[1]){
-        //DMSG("Command error");
         return PN532_INVALID_FRAME;
     }
 
@@ -320,12 +297,11 @@ int16_t readResponse(uint8_t * buf, uint8_t len, uint16_t timeout)
         sum += buf[i];
     }
 
-    /** checksum and postamble */
+    // checksum and postamble
     if(receive(tmp, 2, timeout) <= 0){
         return PN532_TIMEOUT;
     }
     if( 0 != (uint8_t)(sum + tmp[0]) || 0 != tmp[1] ){
-        //DMSG("Checksum error");
         return PN532_INVALID_FRAME;
     }
 
@@ -385,7 +361,7 @@ uint32_t writeRegister(uint16_t reg, uint8_t val)
     }
 
     // read data packet
-    int16_t status = readResponse(pn532_packetbuffer, 64 /*sizeof(pn532_packetbuffer)*/, 0);
+    int16_t status = readResponse(pn532_packetbuffer, 64, 0);
     if (0 > status) {
         return 0;
     }
@@ -411,7 +387,7 @@ uint32_t getFirmwareVersion(void)
     }
 
     // read data packet
-    int16_t status = readResponse(pn532_packetbuffer, 64 /*sizeof(pn532_packetbuffer)*/, 0);
+    int16_t status = readResponse(pn532_packetbuffer, 64, 0);
     if (0 > status) {
         return 0;
     }
