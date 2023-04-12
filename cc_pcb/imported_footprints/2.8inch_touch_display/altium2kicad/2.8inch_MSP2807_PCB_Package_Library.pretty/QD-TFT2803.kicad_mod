@@ -1,0 +1,8 @@
+(module "QD-TFT2803" (layer F.Cu) (tedit 5B0D3C36)
+  (fp_line (start 0.00000 -69.20000) (end 50.00000 -69.20000) (layer Cmts.User) (width 0.254))
+  (fp_line (start 0.00000 0.00000) (end 0.00000 -69.20000) (layer Cmts.User) (width 0.254))
+  (fp_line (start 0.00000 0.00000) (end 50.00000 0.00000) (layer Cmts.User) (width 0.254))
+  (fp_line (start 50.00000 0.00000) (end 50.00000 -69.20000) (layer Cmts.User) (width 0.254))
+  (fp_line (start 0.00000 -17.46000) (end 17.70000 -17.46000) (layer Cmts.User) (width 0.254))
+  (fp_line (start 33.63600 -17.46000) (end 50.00000 -17.46000) (layer Cmts.User) (width 0.254))
+)
