@@ -18,10 +18,10 @@
 #include "timer.h"
 #include "misc.h"
 			
-
+extern uint8_t rfid_tag[20];
+extern uint8_t uid_buf[7];
 int main(void)
 {
-
 	setup_pcb_leds();
 	//set_pin(GPIOA, 5, 1);
 	setup_external_timesync();
