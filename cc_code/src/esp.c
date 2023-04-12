@@ -238,6 +238,7 @@ volatile char wifi_readbuff[10] = "";
 volatile char wifi_response[700];
 volatile char responseStateIPD = 0;
 volatile char responseStateOK = 0;
+volatile char responseStateDisconnect = 0;
 volatile int responseBytesToGo = 0;
 volatile int responseBytesTotal = 0;
 
@@ -347,6 +348,69 @@ void USART1_IRQHandler(void) {
 						responseStateOK = 0;
 						break;
 			default: responseStateOK = 0;
+		}
+
+		switch(responseStateDisconnect) {
+					case 0 : if (rxByte == 'W')responseStateDisconnect++;
+						else {responseStateDisconnect = 0;}
+						break;
+					case 1 : if (rxByte == 'I')responseStateDisconnect++;
+						else {responseStateDisconnect = 0;}
+						break;
+					case 2 : if (rxByte == 'F')responseStateDisconnect++;
+						else {responseStateDisconnect = 0;}
+						break;
+					case 3 : if (rxByte == 'I')responseStateDisconnect++;
+						else {responseStateDisconnect = 0;}
+						break;
+					case 4 : if (rxByte == ' ')responseStateDisconnect++;
+						else {responseStateDisconnect = 0;}
+						break;
+					case 5 : if (rxByte == 'D')responseStateDisconnect++;
+						else {responseStateDisconnect = 0;}
+						break;
+					case 6 : if (rxByte == 'I')responseStateDisconnect++;
+						else {responseStateDisconnect = 0;}
+						break;
+					case 7 : if (rxByte == 'S')responseStateDisconnect++;
+						else {responseStateDisconnect = 0;}
+						break;
+					case 8 : if (rxByte == 'C')responseStateDisconnect++;
+						else {responseStateDisconnect = 0;}
+						break;
+					case 9 : if (rxByte == 'O')responseStateDisconnect++;
+						else {responseStateDisconnect = 0;}
+						break;
+					case 10 : if (rxByte == 'N')responseStateDisconnect++;
+						else {responseStateDisconnect = 0;}
+						break;
+					case 11 : if (rxByte == 'N')responseStateDisconnect++;
+						else {responseStateDisconnect = 0;}
+						break;
+					case 12 : if (rxByte == 'E')responseStateDisconnect++;
+						else {responseStateDisconnect = 0;}
+						break;
+					case 13 : if (rxByte == 'C')responseStateDisconnect++;
+						else {responseStateDisconnect = 0;}
+						break;
+					case 14 : if (rxByte == 'T')responseStateDisconnect++;
+						else {responseStateDisconnect = 0;}
+						//WIFI DISCONNECT is read. Must reconnect to the wifi if the timer 6 semaphore is not 0
+						if (tim6semaphore != 0) {
+							//reset the http state
+							wifiHTTPState = 0;
+							//reset the timer semaphore
+							tim6semaphore = 0;
+							//reset the wifi intial state to redo the connection
+							wifiInitialState = 2;
+
+						}
+						responseStateDisconnect = 0;
+
+						break;
+
+
+			default: responseStateDisconnect = 0;
 		}
 	}
 

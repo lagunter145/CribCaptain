@@ -7,9 +7,12 @@
 
 #include "stm32f0xx.h"
 #include "rfid.h"
+#include "RA8775_commands.h"
+#include "lcd_7in.h"
 
 uint8_t rfid_tag[20];
-uint8_t uid_buf[7];
+char uid_str[10];
+uint32_t uid;
 
 // USART5 was used from 362 Lab 10. I just copied over the initiation and
 // basic read/write functions.
@@ -115,10 +118,17 @@ void DMA1_CH1_IRQHandler(void) {
         sens_res |= rfid_tag[10];
 
         //*uidLength = pn532_packetbuffer[5];
-
+        uid = 0;
         for (uint8_t i = 0; i < rfid_tag[12]; i++) {
-            uid_buf[i] = rfid_tag[13 + i];
+            uid |= rfid_tag[13 + i] << (8 * i);
         }
+        itoa(uid,(&uid_str[0]), 16);
+        textMode();
+		textSetCursor(100, 350);
+		textEnlarge(2);
+		textColor(0x8170, RA8875_WHITE);
+		textWrite(uid_str, rfid_tag[12] * 2);
+		graphicsMode();
 
 		DMA1_Channel1->CCR &= ~DMA_CCR_EN;
 		USART5->CR3 &= ~(USART_CR3_DMAT | USART_CR3_DMAR);

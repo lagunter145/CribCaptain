@@ -18,12 +18,16 @@
 #include "misc.h"
 			
 extern uint8_t rfid_tag[20];
-extern uint8_t uid_buf[7];
+extern char uid_str[10];
+extern uint32_t uid;
 int main(void)
 {
 	setup_pcb_leds();
 
+
+	/*
 	init_usart5();
+
 
 	// RFID + DMA INITIALIZATION ROUTINE
     uint32_t versiondata = 0;
@@ -38,20 +42,20 @@ int main(void)
     firmware0 = versiondata>>16 & 0xff;
     firmware1 = versiondata>>8  & 0xff;
     printf("%d\n", versiondata);
-
+*/
 
     // set max retry attempts
     // setPassiveActivationRetries(0xff);
 
     // Configure Secure Access Module to read RFID cards
-    SAMConfig();
+    //SAMConfig();
 
     uint8_t uid[] = { 0, 0, 0, 0, 0, 0, 0 };  // Buffer to store the returned UID
     uint8_t uidLength;                        // Length of the UID (4 or 7 bytes depending on ISO14443A card type)
 
 
-    success = readPassiveTargetID(PN532_MIFARE_ISO14443A, &uid[0], &uidLength, 0);
-    enable_DMA1();
+    //success = readPassiveTargetID(PN532_MIFARE_ISO14443A, &uid[0], &uidLength, 0);
+    //enable_DMA1();
 
 
 	//set_pin(GPIOA, 5, 1);

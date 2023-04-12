@@ -128,15 +128,16 @@ void tim6_triggerInterrupt(void) {
 
 void write_time(int second) {
 
-	//char buff[] = "                  ";
-	//textWrite(buff, 15);
-	//textSetCursor(100, 150);
-
-	//itoa(second, buff, 10);
+	int hourToDisplay = 0;
+	if (hour == 12 || hour == 0) {
+		hourToDisplay = 12;
+	} else {
+		hourToDisplay = hour % 12;
+	}
 
 	char time[8] = "00,00,00";
-	itoa((hour % 12) / 10,(&time[0]),10);
-	itoa((hour % 12) % 10,(&time[1]),10);
+	itoa(hourToDisplay / 10,(&time[0]),10);
+	itoa(hourToDisplay % 10,(&time[1]),10);
 	itoa(minute / 10,(&time[3]),10);
 	itoa(minute % 10,(&time[4]),10);
 	itoa(second / 10,(&time[6]),10);
@@ -154,34 +155,30 @@ void write_time(int second) {
 
 //Deals with the external interrupt for the Timing Synchronization
 void EXTI4_15_IRQHandler(void) {
-
 	//Check if the interrupt is the Timing Sychronization
 	if (EXTI->PR & EXTI_PR_PR13) {
 		//acknowledge the interrupt
 		EXTI->PR |= EXTI_PR_PR13;
 
-		jiffy++;
+			jiffy++;
 
-		//second
-		if (jiffy == 60){
-			jiffy = 0;
-			second++;
-			toggle_pin(GPIOA, 5);
-			if (second == 60) {
-				second = 0;
-				minute++;
-				//write_time(second);
-				if (minute == 60) {
-					minute = 0;
-					hour++;
+			//second
+			if (jiffy == 60){
+				jiffy = 0;
+				second++;
+				toggle_pin(GPIOA, 5);
+				if (second == 60) {
+					second = 0;
+					minute++;
+					//write_time(second);
+					if (minute == 60) {
+						minute = 0;
+						hour++;
+					}
+
 				}
-
-			}
-			write_time(second);
-
-
+				write_time(second);
 		}
-
 
 	}
 }
