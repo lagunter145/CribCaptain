@@ -160,6 +160,13 @@ void EXTI4_15_IRQHandler(void) {
 		//acknowledge the interrupt
 		EXTI->PR |= EXTI_PR_PR13;
 
+		uint8_t a = (GPIOC->IDR & (1 << 13)) ? 1 : 0;
+		uint8_t b = (GPIOC->IDR & (1 << 13)) ? 1 : 0;
+		uint8_t c = (GPIOC->IDR & (1 << 13)) ? 1 : 0;
+		uint8_t d = (GPIOC->IDR & (1 << 13)) ? 1 : 0;
+		uint8_t e = (GPIOC->IDR & (1 << 13)) ? 1 : 0;
+
+		if ((a + b + c + d + e) > 2) {
 			jiffy++;
 
 			//second
@@ -178,8 +185,8 @@ void EXTI4_15_IRQHandler(void) {
 
 				}
 				write_time(second);
+			}
 		}
-
 	}
 }
 
