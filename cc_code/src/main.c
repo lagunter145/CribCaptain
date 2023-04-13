@@ -64,7 +64,8 @@ int main(void)
 	// switch back to graphics mode
 	graphicsMode();
 
-	button1 = init_button(10, 350, 200, 80, "button", YELLOW);
+	//button1 = init_button(10, 350, 200, 80, "button", YELLOW);
+	guiStateHandler(0);
 	setup_t_irq();
 	for(;;) {
 

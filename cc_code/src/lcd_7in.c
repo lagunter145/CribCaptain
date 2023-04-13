@@ -13,7 +13,7 @@
 
 int counter = 0;
 uint8_t _textScale;
-Button button1;
+//Button button1;
 
 void nano_wait(unsigned int n) {
     asm(    "        mov r0,%0\n"
@@ -106,6 +106,9 @@ void EXTI0_1_IRQHandler (void) {
         /* Draw a circle */
         xc = (uint16_t)(tx/xScale);
         yc = (uint16_t)(ty/yScale);
+        drawCircle(xc, yc, 4, RA8875_WHITE, 1);
+
+        /*
         temp = button1.pressed;
         button1.pressed = check_pressed(button1, xc, yc);
         drawCircle(xc, yc, 4, RA8875_WHITE, 1);
@@ -135,6 +138,8 @@ void EXTI0_1_IRQHandler (void) {
                 break;
             }
         }
+        */
+        buttonHandler(xc,yc);
     }
 }
 
