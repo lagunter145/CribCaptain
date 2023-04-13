@@ -20,6 +20,12 @@
 extern uint8_t rfid_tag[20];
 extern char uid_str[10];
 extern uint32_t uid;
+
+#include "gui.h"
+
+extern Button button1;
+
+
 int main(void)
 {
 	setup_pcb_leds();
@@ -220,10 +226,6 @@ int main(void)
 /*
 	uint8_t x;
 	char string[15] = "Hello, World! ";
-	// touch coordinates
-	uint16_t tx, ty;
-	float xScale = 1024.0F/800;
-    float yScale = 1024.0F/480;
     // manually assert n_rst pin
 	CS_HIGH;
     RESET_LOW;
@@ -233,7 +235,7 @@ int main(void)
 
     // setup functions
 	setup_spi1();
-	setup_t_irq();
+
     nano_wait(1000000);
 	x = readReg(0);
 	LCD_Init();
@@ -264,7 +266,11 @@ int main(void)
 	// switch back to graphics mode
 	graphicsMode();
 
+	//button1 = init_button(10, 350, 200, 80, "button", YELLOW);
+	guiStateHandler(0);
+	setup_t_irq();
 	for(;;) {
+
 //	    if (!ra8875INT()){
 //	    if (touched()) {
 //	        touchRead(&tx, &ty);
@@ -272,6 +278,8 @@ int main(void)
 //	        drawCircle((uint16_t)(tx/xScale), (uint16_t)(ty/yScale), 4, RA8875_WHITE, 1);
 //	    }
 //	    }
+
+
 	}
 	*/
 

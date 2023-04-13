@@ -13,7 +13,6 @@
 void nano_wait(unsigned int);
 
 
-extern uint8_t _textScale;
 
 // display's chip select: PB8
 #define CS_NUM  8
