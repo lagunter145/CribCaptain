@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include "lcd_7in.h"
 #include "timer.h"
+#include "gui.h"
 
 volatile int tim6semaphore = 0; //0 for wifi setup, 1 for http get request
 
@@ -18,6 +19,8 @@ volatile int jiffy = 0;
 volatile int second = 0;
 volatile int minute = 0;
 volatile int hour = 0;
+extern volatile uint8_t canTouch;
+extern stateType guiMenuState;
 //Sets up the time synchronization for the device
 void setup_external_timesync() {
 
@@ -86,7 +89,7 @@ void setup_tim6() {
 	TIM6->PSC = 48000 - 1; // 48,000,000 / (47 + 1) = 1 kHz
 
 	//Configure the auto-reload register
-	TIM6->ARR = 500;
+	TIM6->ARR = 500 - 1;
 
 	//configure the Timer 6 DMA/Interrupt Enable Register
 	//(enable the UIE falg)
@@ -102,6 +105,24 @@ void setup_tim6() {
 	//NVIC_SetPriority(TIM6_DAC_IRQn, 1);
 }
 
+/*
+//timer to wait for the touch interrupt
+void setup_tim15() {
+	//Enable RCC clock to Timer 15
+	RCC->APB2ENR |= RCC_APB2ENR_TIM15EN;
+	//update the TI15 prescaler
+	TIM15->PSC = 48000 - 1;
+	//Configure the auto-reload register
+	TIM15->ARR = 500 - 1;
+	//configure the Timer 15 DMA/Interrupt Enable Register
+	//Enable TIM15 by setting the CEN bit in
+	TIM15->DIER |= TIM_DIER_UIE;
+	//the TIM15 control register1
+	TIM15->CR1 |= TIM_CR1_CEN;
+	//Enable the interrupt for Timer 15 in the NVIC ISER
+	NVIC->ISER[0] = (1 << TIM15_IRQn);
+}
+*/
 
 //will update the timers configuration to have a delay of ms
 // in milliseconds
@@ -121,12 +142,12 @@ void tim6_triggerInterrupt(void) {
 	//Disable the TIM6 by reseting the CEN bit in CR1
 	TIM6->CR1 &= ~TIM_CR1_CEN;
 	//set the TIM6 counter to the auto-reload register, so it triggers the timer interrupt automatically
-	TIM6->CNT = TIM6->ARR;
+	//TIM6->CNT = TIM6->ARR;
 	//Enable TIM6 by setting the CEN bit in CR1
 	TIM6->CR1 |= TIM_CR1_CEN;
 }
 
-void write_time(int second) {
+void write_time() {
 
 	int hourToDisplay = 0;
 	if (hour == 12 || hour == 0) {
@@ -144,8 +165,9 @@ void write_time(int second) {
 	itoa(second % 10,(&time[7]),10);
 	time[2] = ':';
 	time[5] = ':';
+
 	textMode();
-	textSetCursor(100, 150);
+	textSetCursor(600, 50);
 	textEnlarge(2);
 	textColor(0x8170, RA8875_WHITE);
 	textWrite(time, 8);
@@ -160,13 +182,13 @@ void EXTI4_15_IRQHandler(void) {
 		//acknowledge the interrupt
 		EXTI->PR |= EXTI_PR_PR13;
 
-		uint8_t a = (GPIOC->IDR & (1 << 13)) ? 1 : 0;
-		uint8_t b = (GPIOC->IDR & (1 << 13)) ? 1 : 0;
-		uint8_t c = (GPIOC->IDR & (1 << 13)) ? 1 : 0;
-		uint8_t d = (GPIOC->IDR & (1 << 13)) ? 1 : 0;
-		uint8_t e = (GPIOC->IDR & (1 << 13)) ? 1 : 0;
+		//uint8_t a = (GPIOC->IDR & (1 << 13)) ? 1 : 0;
+		//uint8_t b = (GPIOC->IDR & (1 << 13)) ? 1 : 0;
+		//uint8_t c = (GPIOC->IDR & (1 << 13)) ? 1 : 0;
+		//uint8_t d = (GPIOC->IDR & (1 << 13)) ? 1 : 0;
+		//uint8_t e = (GPIOC->IDR & (1 << 13)) ? 1 : 0;
 
-		if ((a + b + c + d + e) > 2) {
+		//if ((a + b + c + d + e) > 2) {
 			jiffy++;
 
 			//second
@@ -184,47 +206,29 @@ void EXTI4_15_IRQHandler(void) {
 					}
 
 				}
-				write_time(second);
+				//if (guiMenuState != LOADING)
+					write_time();
 			}
-		}
+		//}
+
 	}
 }
 
 
+void TIM15_IRQHandler(void) {
+	TIM15->SR &= ~TIM_SR_UIF;
 
-/*
-//Deals with the external interrupt for the Timing Synchronization
-void EXTI0_1_IRQHandler(void) {
 
-	//Check if the interrupt is the Timing Sychronization
-	if (EXTI->PR & EXTI_PR_PR0) {
-		//acknowledge the interrupt
-		EXTI->PR |= EXTI_PR_PR0;
+	//reset flag
+	canTouch = 1;
+	//stop TIM15
+	//tim15_stopTimer();
+	toggle_pin(GPIOA, 6);
 
-		jiffy++;
 
-		//second
-		if (jiffy == 60){
-			jiffy = 0;
-			second++;
-			toggle_pin(GPIOC, 6);
-			if (second == 60) {
-				second = 0;
-				minute++;
-				//write_time(second);
-				if (minute == 60) {
-					minute = 0;
-					hour++;
-				}
-
-			}
-			write_time(second);
-
-		}
-
-	}
 }
-*/
+
+
 
 volatile int wifiInitialState = 0;
 volatile int wifiHTTPState = 0;
@@ -325,6 +329,7 @@ void TIM6_DAC_IRQHandler(void) {
 		if (wifiHTTPState == 2) {
 			http_getrequest(url, 2);
 			wifiHTTPState++;
+			guiStateHandler(MAIN);
 		}
 		//if (wifiHTTPState <= 2)
 			//wifiHTTPState++;

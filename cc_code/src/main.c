@@ -80,6 +80,7 @@ int main(void)
 
 	//setup_spi1();
 	setup_tim6();
+	//setup_tim15();
 
 	CS_HIGH;
 	RESET_LOW;
@@ -92,7 +93,9 @@ int main(void)
 
 	nano_wait(1000000);
 	x = readReg(0);
+
 	LCD_Init();
+
 	displayOn(1);
 	GPIOX(1);      // Enable TFT - display enable tied to GPIOX
 	PWM1config(1, RA8875_PWM_CLK_DIV1024); // PWM output for backlight
@@ -128,7 +131,7 @@ int main(void)
 	//set_pin(GPIOC, 6, 0);
 	//set_pin(GPIOC, 7, 1);
 	//set_pin(GPIOC, 8, 1);
-
+	guiStateHandler(LOADING);
 	setup_t_irq();
 
 
