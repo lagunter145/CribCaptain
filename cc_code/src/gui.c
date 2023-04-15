@@ -14,6 +14,9 @@
 extern uint16_t base_color;
 extern uint16_t acce_color;
 extern uint8_t colorUpdated;
+extern uint32_t uid;
+extern char uid_str[10];
+extern uint8_t rfid_tag[20];
 stateType guiMenuState = LOADING;
 
 
@@ -112,15 +115,17 @@ void guiMAINDraw(void) {
 	// draw button
 	textSetCursor(buttonArr[0].x1, buttonArr[0].y1);
 	textTransparent(acce_color);
+	strcpy(buttonArr[0].label, "button2");
+	buttonArr[0].labelLength = strlen(buttonArr[0].label);
 	textWrite(buttonArr[0].label, buttonArr[0].labelLength);
 	graphicsMode();
 
 	// clear the button flags
 	buttonArr[0].pressed = 0;
-	buttonArr[0].on = 0;
+	buttonArr[0].on = 1;
 	// turn on MAIN button
-	buttonArr[1].pressed = 0;
-	buttonArr[1].on= 1;
+	//buttonArr[1].pressed = 0;
+	//buttonArr[1].on= 1;
 }
 
 void guiLOADINGDraw(void) {
@@ -134,9 +139,13 @@ void guiLOADINGDraw(void) {
 	textWrite("LOADING", 7);
 
 	// draw button
-	textSetCursor(buttonArr[1].x1, buttonArr[1].y1);
+	textSetCursor(buttonArr[0].x1, buttonArr[0].y1);
 	textTransparent(acce_color);
-	textWrite(buttonArr[1].label, buttonArr[1].labelLength);
+	strcpy(buttonArr[0].label ,"back to main :)");
+	buttonArr[0].label[13] = 0x01;
+	buttonArr[0].label[14] = 0x99;
+	buttonArr[0].labelLength = strlen(buttonArr[0].label);
+	textWrite(buttonArr[0].label, buttonArr[0].labelLength);
 
 	graphicsMode();
 
@@ -157,9 +166,12 @@ void guiCHECKINDraw(void) {
 	textColor(acce_color, base_color);
 	textWrite("CHECKIN", 7);
 
+	textSetCursor(100, 150);
+	textWrite(uid_str, rfid_tag[12] * 2);
+
 	textSetCursor(300, 240);
-	textEnlarge(2);
-	textColor(acce_color, base_color);
+	//textEnlarge(2);
+	//textColor(acce_color, base_color);
 	textWrite("How many guests?", 16);
 
 
@@ -180,6 +192,8 @@ void guiRedraw() {
 		case MAIN:
 			guiMAINDraw();
 			break;
+		case CHECKIN:
+			guiCHECKINDraw();
 	}
 	// acknowledge touch interrupt
 	writeReg(RA8875_INTC2, RA8875_INTC2_TP);
@@ -201,7 +215,7 @@ void guiStateHandler(stateType state) {
 			}
 			break;
 		case MAIN:
-			if (buttonArr[1].pressed){
+			if (buttonArr[0].pressed){
 				// switch states
 				guiLOADINGDraw();
 				guiMenuState = LOADING;
@@ -210,9 +224,12 @@ void guiStateHandler(stateType state) {
 			}
 			break;
 		case CHECKIN:
-			guiCHECKINDraw();
+			if (card_scanned) {
+				guiCHECKINDraw();
+			}
 			// acknowledge touch interrupt
 			writeReg(RA8875_INTC2, RA8875_INTC2_TP);
+			card_scanned = 0;
 			break;
 	}
 

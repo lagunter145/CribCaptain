@@ -24,7 +24,7 @@ typedef struct Button{
     int x2;
     int y1;
     int y2;
-    char label[10];
+    char label[15];
     uint8_t on;
     uint8_t labelLength;
     uint8_t pressed;

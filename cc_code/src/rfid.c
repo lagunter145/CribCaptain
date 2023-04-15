@@ -78,7 +78,7 @@ void init_usart5()
 	//THE ENABLING OF THE DMA 1 IS IN SEPARATE FUNCTION
 	//configure NVIC for DMA
 	NVIC_EnableIRQ(DMA1_Channel1_IRQn);
-	NVIC_SetPriority(DMA1_Channel1_IRQn,0);
+	NVIC_SetPriority(DMA1_Channel1_IRQn,1);
 
 
     USART5->CR1 |= USART_CR1_TE | USART_CR1_RE; // enable transmitter and receiver by setting TE and RE
@@ -125,12 +125,12 @@ void DMA1_CH1_IRQHandler(void) {
             uid |= rfid_tag[13 + i] << (8 * i);
         }
         itoa(uid,(&uid_str[0]), 16);
-        textMode();
-		textSetCursor(100, 350);
-		textEnlarge(2);
-		textColor(0x8170, RA8875_WHITE);
-		textWrite(uid_str, rfid_tag[12] * 2);
-		graphicsMode();
+//        textMode();
+//		textSetCursor(100, 350);
+//		textEnlarge(2);
+//		textColor(0x8170, RA8875_WHITE);
+//		textWrite(uid_str, rfid_tag[12] * 2);
+//		graphicsMode();
 
 		DMA1_Channel1->CCR &= ~DMA_CCR_EN;
 		USART5->CR3 &= ~(USART_CR3_DMAT | USART_CR3_DMAR);
@@ -138,7 +138,7 @@ void DMA1_CH1_IRQHandler(void) {
 		USART5->CR3 |= USART_CR3_DMAT | USART_CR3_DMAR;
 		DMA1_Channel1->CNDTR = 19;
 	    DMA1_Channel1->CCR |= DMA_CCR_EN;
-
+	    card_scanned = 1;
 	    guiMenuState = CHECKIN;
 
 	}

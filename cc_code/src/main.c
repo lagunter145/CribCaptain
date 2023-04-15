@@ -24,12 +24,13 @@
 extern uint8_t rfid_tag[20];
 extern char uid_str[10];
 extern uint32_t uid;
-
+extern uint8_t card_scanned;
 //extern Button button1;
 
 
 int main(void)
 {
+	card_scanned = 0;
 	// RFID + DMA INITIALIZATION ROUTINE
     uint32_t versiondata = 0;
     uint32_t chip;
@@ -38,24 +39,24 @@ int main(void)
     int success;
 
 
-//    init_usart5();
-//    wakeup();
-//    versiondata = getFirmwareVersion();
-//    chip = (versiondata>>24) & 0xff;
-//    firmware0 = versiondata>>16 & 0xff;
-//    firmware1 = versiondata>>8  & 0xff;
-//    printf("%d\n", versiondata);
-//
-//
-//    // set max retry attempts
-//    // setPassiveActivationRetries(0xff);
-//
-//    // Configure Secure Access Module to read RFID cards
-//    SAMConfig();
-//
-//
-//    success = readPassiveTargetID(PN532_MIFARE_ISO14443A, NULL, NULL, 0);
-//    enable_DMA1();
+    init_usart5();
+    wakeup();
+    versiondata = getFirmwareVersion();
+    chip = (versiondata>>24) & 0xff;
+    firmware0 = versiondata>>16 & 0xff;
+    firmware1 = versiondata>>8  & 0xff;
+    //printf("%d\n", versiondata);
+
+
+    // set max retry attempts
+    // setPassiveActivationRetries(0xff);
+
+    // Configure Secure Access Module to read RFID cards
+    SAMConfig();
+
+
+    success = readPassiveTargetID(PN532_MIFARE_ISO14443A, NULL, NULL, 0);
+    enable_DMA1();
 
 
 	//set_pin(GPIOA, 5, 1);
@@ -124,7 +125,7 @@ int main(void)
 
 	// switch to text mode
 	textMode();
-	cursorBlink(32);
+	//cursorBlink(32);
 	textEnlarge(0);
 	textSetCursor(10, 10);
 	textColor(0x8170, RA8875_WHITE);
