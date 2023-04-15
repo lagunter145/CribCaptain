@@ -19,6 +19,7 @@ char readBuffer[10];
 extern volatile int minute;
 extern volatile int hour;
 extern volatile int second;
+
 extern volatile int wifiHTTPState;
 extern volatile int wifiInitialState;
 extern volatile int tim6semaphore;
@@ -60,9 +61,10 @@ void setup_uart1() {
 	//Not Working
 	NVIC_EnableIRQ(USART1_IRQn);
 	NVIC->ISER[0] = (1 << USART1_IRQn);
+	NVIC_SetPriority(USART1_IRQn, 0);
+
 	//Enable the recieve not empty interrupt enable
 	USART1->CR1 |= USART_CR1_RXNEIE;
-
 
 	//Set the peripheral register address in DMA_CPARx
 	//DMA1->CPAR[0] |= USART1;
@@ -82,7 +84,6 @@ void setup_uart1() {
 
 	//Enable the DMA clock
 	//RCC->AHBENR |= RCC_AHBENR_DMAEN;
-	//
 
 }
 
@@ -230,12 +231,11 @@ void wifi_parseresponse(char * http) {
 	minute = atoi(&time[3]);
 	second = atoi(&time[6]);
 
-
 }
 
 
 volatile char wifi_readbuff[10] = "";
-volatile char wifi_response[700];
+volatile char wifi_response[800];
 volatile char responseStateIPD = 0;
 volatile char responseStateOK = 0;
 volatile char responseStateDisconnect = 0;

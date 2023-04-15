@@ -8,11 +8,6 @@
 #ifndef TIMER_H_
 #define TIMER_H_
 
-typedef enum {
-	LOADING,
-	MAIN,
-	CHECKIN
-} stateType;
 
 
 void setup_tim6();

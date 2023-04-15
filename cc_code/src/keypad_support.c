@@ -10,6 +10,7 @@
 
 #include "stm32f0xx.h"
 #include <string.h> // for memmove()
+#include "keypad_support.h"
 
 // 16 history bytes.  Each byte represents the last 8 samples of a button.
 uint8_t hist[16];
@@ -59,8 +60,9 @@ char get_key_event(void) {
         asm volatile ("wfi" : :);   // wait for an interrupt
        if (queue[qout] == 0)
             continue;
+	   break;
     }
-    return keymap[pop_queue()];
+    return keymap[(uint8_t)pop_queue()];
 }
 
 char get_keypress() {

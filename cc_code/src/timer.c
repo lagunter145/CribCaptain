@@ -12,7 +12,10 @@
 #include "lcd_7in.h"
 #include "timer.h"
 #include "gui.h"
+#include "colours.h"
 
+extern uint16_t base_color;
+extern uint16_t acce_color;
 volatile int tim6semaphore = 0; //0 for wifi setup, 1 for http get request
 
 volatile int jiffy = 0;
@@ -102,7 +105,7 @@ void setup_tim6() {
 
 	//Enable the interrupt for Timer 6 in the NVIC ISER
 	NVIC->ISER[0] = (1 << TIM6_DAC_IRQn);
-	//NVIC_SetPriority(TIM6_DAC_IRQn, 1);
+	NVIC_SetPriority(TIM6_DAC_IRQn, 1);
 }
 
 /*
@@ -142,9 +145,32 @@ void tim6_triggerInterrupt(void) {
 	//Disable the TIM6 by reseting the CEN bit in CR1
 	TIM6->CR1 &= ~TIM_CR1_CEN;
 	//set the TIM6 counter to the auto-reload register, so it triggers the timer interrupt automatically
-	//TIM6->CNT = TIM6->ARR;
+	TIM6->CNT = TIM6->ARR;
 	//Enable TIM6 by setting the CEN bit in CR1
 	TIM6->CR1 |= TIM_CR1_CEN;
+}
+
+uint8_t loadingCounter = 0;
+void write_loading() {
+
+	textMode();
+	textSetCursor(250, 100);
+	textEnlarge(4);
+	textColor(acce_color, base_color);
+	if (loadingCounter == 0)
+		textWrite("LOADING   ", 10);
+	if (loadingCounter == 1)
+			textWrite("LOADING.  ", 10);
+	if (loadingCounter == 2)
+			textWrite("LOADING.. ", 10);
+	if (loadingCounter == 3)
+			textWrite("LOADING...", 10);
+	graphicsMode();
+	if (loadingCounter >= 3)
+		loadingCounter = 0;
+	else {
+		loadingCounter++;
+	}
 }
 
 void write_time() {
@@ -167,9 +193,9 @@ void write_time() {
 	time[5] = ':';
 
 	textMode();
-	textSetCursor(600, 50);
+	textSetCursor(600, 60);
 	textEnlarge(2);
-	textColor(0x8170, RA8875_WHITE);
+	textColor(acce_color, base_color);
 	textWrite(time, 8);
 	graphicsMode();
 
@@ -195,7 +221,7 @@ void EXTI4_15_IRQHandler(void) {
 			if (jiffy == 60){
 				jiffy = 0;
 				second++;
-				toggle_pin(GPIOA, 5);
+				//toggle_pin(GPIOA, 5);
 				if (second == 60) {
 					second = 0;
 					minute++;
@@ -206,8 +232,17 @@ void EXTI4_15_IRQHandler(void) {
 					}
 
 				}
-				//if (guiMenuState != LOADING)
+
+				if (guiMenuState == LOADING) {
+					//write loading to the screen
+					write_loading();
+				}
+				else {
+					//update the time
 					write_time();
+				}
+				guiStateHandler(guiMenuState);
+
 			}
 		//}
 
@@ -264,45 +299,6 @@ void TIM6_DAC_IRQHandler(void) {
 		}
 
 
-		//if (wifiInitialState <= 5)
-			//wifiInitialState++;
-
-		/*
-		if (wifiInitialState == 0) {
-			tim6_changeTimer(2000);
-		}
-		if (wifiInitialState == 1) {
-			textMode();
-			textSetCursor(100, 150);
-			textEnlarge(2);
-			textColor(0x8170, RA8875_WHITE);
-			textWrite("State 1!", 8);
-			graphicsMode();
-			tim6_changeTimer(11000);
-		}
-		if (wifiInitialState == 2) {
-			textMode();
-			textSetCursor(100, 150);
-			textEnlarge(2);
-			textColor(0x8170, RA8875_WHITE);
-			textWrite("State 2!", 8);
-			graphicsMode();
-			tim6_changeTimer(11000);
-			tim6_triggerInterrupt();
-		}
-		if (wifiInitialState == 3) {
-			textMode();
-			textSetCursor(100, 150);
-			textEnlarge(2);
-			textColor(0x8170, RA8875_WHITE);
-			textWrite("State 3!", 8);
-			graphicsMode();
-			tim6_changeTimer(11000);
-		}
-		if (wifiInitialState <= 5)
-			wifiInitialState++;
-		*/
-
 	}
 
 	//HTTP get requests
@@ -329,10 +325,10 @@ void TIM6_DAC_IRQHandler(void) {
 		if (wifiHTTPState == 2) {
 			http_getrequest(url, 2);
 			wifiHTTPState++;
-			guiStateHandler(MAIN);
+			guiMenuState = MAIN;
+			guiMAINDraw();
 		}
-		//if (wifiHTTPState <= 2)
-			//wifiHTTPState++;
+
 	}
 
 

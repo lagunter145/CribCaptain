@@ -9,10 +9,12 @@
 #include "rfid.h"
 #include "RA8775_commands.h"
 #include "lcd_7in.h"
+#include "gui.h"
 
 uint8_t rfid_tag[20];
 char uid_str[10];
 uint32_t uid;
+extern stateType guiMenuState;
 
 // USART5 was used from 362 Lab 10. I just copied over the initiation and
 // basic read/write functions.
@@ -136,6 +138,9 @@ void DMA1_CH1_IRQHandler(void) {
 		USART5->CR3 |= USART_CR3_DMAT | USART_CR3_DMAR;
 		DMA1_Channel1->CNDTR = 19;
 	    DMA1_Channel1->CCR |= DMA_CCR_EN;
+
+	    guiMenuState = CHECKIN;
+
 	}
 }
 

@@ -11,6 +11,16 @@
 #include "stm32f0xx.h"
 #include <stdint.h>
 #include "keypad_debounced.h"
+#include "keypad_support.h"
+#include "RA8775_commands.h"
+#include "colours.h"
+#include "gui.h"
+#include "timer.h"
+
+extern stateType guiMenuState;
+extern uint16_t base_color;
+extern uint16_t acce_color;
+extern uint16_t colour_pairs[16][2];
 
 uint8_t c = 1;
 uint8_t r = 0;
@@ -28,6 +38,7 @@ void enable_ports_keypad(){
                     GPIO_MODER_MODER11);
 
     //PC4-PC7: rows are inputs
+
     //PC4-PC7 pulled internally low
      GPIOC->PUPDR &= ~(GPIO_PUPDR_PUPDR4 |
                      GPIO_PUPDR_PUPDR5 |
@@ -50,29 +61,13 @@ void enable_ports_keypad(){
                  GPIO_OTYPER_OT_9 |
                  GPIO_OTYPER_OT_10 |
                  GPIO_OTYPER_OT_11;
-
-}
-
-//enable ports for LEDs
-void enable_ports_LED(){
-      RCC->AHBENR |= RCC_AHBENR_GPIOAEN;
-      //clear PC0-PC3 for LEDs
-      GPIOA->MODER &= ~(GPIO_MODER_MODER5 |
-                      GPIO_MODER_MODER6 |
-                      GPIO_MODER_MODER7 |
-                      GPIO_MODER_MODER8);
-      //set PC0-PC3 for outputs
-      GPIOA->MODER |= GPIO_MODER_MODER5_0 |
-                      GPIO_MODER_MODER6_0 |
-                      GPIO_MODER_MODER7_0 |
-                      GPIO_MODER_MODER8_0;
 }
 
 //set up Timer 7 for Keypad
 void setup_tim7() {
-    RCC->APB1ENR|= RCC_APB1ENR_TIM7EN;
+    RCC->APB1ENR |= RCC_APB1ENR_TIM7EN;
     TIM7->PSC = 4800 - 1;
-    TIM7->ARR = 10 - 1;
+    TIM7->ARR = 10 - 1; //1 ms
     TIM7->DIER |= TIM_DIER_UIE;
     NVIC->ISER[0] |= (1 << TIM7_IRQn);
     TIM7->CR1 |= TIM_CR1_CEN;
@@ -89,88 +84,83 @@ void TIM7_IRQHandler()
         update_history(c, r);
         r = read_rows();
     }
+    /*switch(guiMenuState) {
+    	case LOADING:
+    		guiLOADINGDraw();
+    		break;
+    	case MAIN:
+    		guiMAINDraw();
+    		break;
+    }*/
 }
 
-//This function sets a GPIO pin num to val
-void setn(int32_t pin_num, int32_t val) {
-    if(val != 0)
-    {
-        //if value is not zero, set GPIO pin num to 1
-        GPIOA->BSRR |= (0x1 << pin_num);
-    }
-    else
-    {
-        //if value is zero, set GPIO pin num to 0
-        GPIOA->BSRR |= (0x1 << (pin_num + 16));
-    }
-}
 
 //This function uses the button press "val"  to light the LEDs in hex
 void keypad_values(char val){
     switch(val){
     case '1':
-        setn(5, 1);
+        base_color = colour_pairs[0][0];
+        acce_color = colour_pairs[0][1];
         break;
     case '2':
-        setn(6, 1);
+    	base_color = colour_pairs[1][0];
+	    acce_color = colour_pairs[1][1];
         break;
     case '3':
-        setn(5, 1);
-        setn(6, 1);
+    	base_color = colour_pairs[2][0];
+		acce_color = colour_pairs[2][1];
         break;
     case '4':
-        setn(7, 1);
+    	base_color = colour_pairs[3][0];
+		acce_color = colour_pairs[3][1];
         break;
     case '5':
-         setn(5, 1);
-         setn(7, 1);
+    	base_color = colour_pairs[4][0];
+		acce_color = colour_pairs[4][1];
          break;
     case '6':
-        setn(6, 1);
-        setn(7, 1);
+    	base_color = colour_pairs[5][0];
+		acce_color = colour_pairs[5][1];
         break;
     case '7':
-        setn(5, 1);
-        setn(6, 1);
-        setn(7, 1);
+    	base_color = colour_pairs[6][0];
+		acce_color = colour_pairs[6][1];
         break;
     case '8':
-        setn(8, 1);
+    	base_color = colour_pairs[7][0];
+		acce_color = colour_pairs[7][1];
         break;
     case '9':
-        setn(5, 1);
-        setn(8, 1);
+    	base_color = colour_pairs[8][0];
+		acce_color = colour_pairs[8][1];
         break;
     case 'A':
-        setn(6, 1);
-        setn(8, 1);
+    	base_color = colour_pairs[9][0];
+		acce_color = colour_pairs[9][1];
         break;
     case 'B':
-        setn(5, 1);
-        setn(6, 1);
-        setn(8, 1);
+    	base_color = colour_pairs[10][0];
+		acce_color = colour_pairs[10][1];
         break;
     case 'C':
-        setn(8, 1);
-        setn(7, 1);
+    	base_color = colour_pairs[11][0];
+		acce_color = colour_pairs[11][1];
         break;
     case 'D':
-        setn(5, 1);
-        setn(7, 1);
-        setn(8, 1);
+    	base_color = colour_pairs[12][0];
+		acce_color = colour_pairs[12][1];
         break;
     case '*':
-        setn(6, 1);
-        setn(7, 1);
-        setn(8, 1);
+    	base_color = colour_pairs[13][0];
+		acce_color = colour_pairs[13][1];
         break;
     case '#':
-        setn(5, 1);
-        setn(6, 1);
-        setn(7, 1);
-        setn(8, 1);
+    	base_color = colour_pairs[14][0];
+		acce_color = colour_pairs[14][1];
         break;
     case '0':
+    	base_color = colour_pairs[15][0];
+		acce_color = colour_pairs[15][1];
         break;
     default:
         break;

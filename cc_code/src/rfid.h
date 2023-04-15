@@ -14,9 +14,13 @@ uint8_t pn532_packetbuffer[64];
 // byte that holds command for writing to PN532
 uint8_t command;
 
+// flag for indicating a card has been scanned;
+uint8_t card_scanned;
+
 // function declarations
 void init_usart5();
 void enable_DMA1();
+void wakeup();
 void write_byte(uint8_t c);
 uint8_t read_byte(void);
 int8_t receive(uint8_t * buf, int len, uint16_t timeout);

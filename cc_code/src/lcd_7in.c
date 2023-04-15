@@ -68,7 +68,7 @@ void spi1_fast()
 {
 	SPI1->CR1 &= ~(SPI_CR1_SPE);// disable SPI enable pin so that SPI can be configured
 	SPI1->CR1 &= ~(SPI_CR1_BR); // baud rate set to fpclk/16 (~3.2 MHz)
-	SPI1->CR1 |= 0x18;
+	SPI1->CR1 |= 0x10;
 	SPI1->CR1 |= SPI_CR1_SPE;   // enable spi1
 }
 
@@ -105,34 +105,34 @@ void setup_t_irq(void) {
 
 void EXTI0_1_IRQHandler (void) {
 
-		// acknowledge the interrupt
-		EXTI->PR |= EXTI_PR_PR0;
-		//uint8_t temp;
-		uint16_t tx, ty;
-		uint16_t xc, yc;
-		float xScale = 1024.0F/800;
-		float yScale = 1024.0F/480;
+	// acknowledge the interrupt
+	EXTI->PR |= EXTI_PR_PR0;
+	//uint8_t temp;
+	uint16_t tx, ty;
+	uint16_t xc, yc;
+	float xScale = 1024.0F/800;
+	float yScale = 1024.0F/480;
 
-		//
-			if (touched()) {
-				touchRead(&tx, &ty);
-				/* Draw a circle */
-				xc = (uint16_t)(tx/xScale);
-				yc = (uint16_t)(ty/yScale);
-				//drawCircle(xc, yc, 4, RA8875_WHITE, 1);
+	//
+	if (touched()) {
+		touchRead(&tx, &ty);
+		/* Draw a circle */
+		xc = (uint16_t)(tx/xScale);
+		yc = (uint16_t)(ty/yScale);
+		//drawCircle(xc, yc, 4, RA8875_WHITE, 1);
 
+		if(buttonHandler(xc,yc) == 0){
+			// return = 0, no GUI state change, acknowledge touch interrupt right away
+		  writeReg(RA8875_INTC2, RA8875_INTC2_TP);
+		}
 
-				buttonHandler(xc,yc);
+		//canTouch = 0;
 
-				//canTouch = 0;
-
-
-
-			}
-		//	canTouch = 0;
-		//	set_pin(GPIOA, 6, canTouch);
-		//	//tim15_resetInterrupt();
-		//}
+	}
+	//	canTouch = 0;
+	//	set_pin(GPIOA, 6, canTouch);
+	//	//tim15_resetInterrupt();
+	//}
 
 }
 
@@ -497,7 +497,7 @@ uint8_t touchRead(uint16_t *x, uint16_t *y) {
   *y = ty;
 
   /* Clear TP INT Status */
-  writeReg(RA8875_INTC2, RA8875_INTC2_TP);
+  //writeReg(RA8875_INTC2, RA8875_INTC2_TP);
 
   return 1;
 }
@@ -607,7 +607,7 @@ void textWrite(const char *buffer, uint16_t len) {
   for (uint16_t i = 0; i < len; i++) {
     LCD_WR_DATA(buffer[i]);
     if (_textScale > 0)
-      nano_wait(100000);
+      nano_wait(500000);
   }
 }
 

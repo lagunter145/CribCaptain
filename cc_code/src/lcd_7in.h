@@ -101,6 +101,7 @@ uint8_t ra8875INT();
 uint8_t transByte(uint8_t d);
 uint8_t readReg(uint8_t reg);
 uint8_t readData();
+void  writeReg(uint8_t reg, uint8_t val);
 
 uint16_t applyRotationX(uint16_t x);
 uint16_t applyRotationY(uint16_t y);

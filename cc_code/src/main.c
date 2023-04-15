@@ -16,25 +16,20 @@
 #include "esp.h"
 #include "timer.h"
 #include "misc.h"
+//#include "keypad_debounced.h"
+//#include "keypad_support.h"
+#include "keypad_test.h"
+#include "gui.h"
 			
 extern uint8_t rfid_tag[20];
 extern char uid_str[10];
 extern uint32_t uid;
 
-#include "gui.h"
-
-extern Button button1;
+//extern Button button1;
 
 
 int main(void)
 {
-	setup_pcb_leds();
-
-
-	/*
-	init_usart5();
-
-
 	// RFID + DMA INITIALIZATION ROUTINE
     uint32_t versiondata = 0;
     uint32_t chip;
@@ -42,30 +37,39 @@ int main(void)
     uint32_t firmware1;
     int success;
 
-    wakeup();
-    versiondata = getFirmwareVersion();
-    chip = (versiondata>>24) & 0xff;
-    firmware0 = versiondata>>16 & 0xff;
-    firmware1 = versiondata>>8  & 0xff;
-    printf("%d\n", versiondata);
-*/
 
-    // set max retry attempts
-    // setPassiveActivationRetries(0xff);
-
-    // Configure Secure Access Module to read RFID cards
-    //SAMConfig();
-
-    uint8_t uid[] = { 0, 0, 0, 0, 0, 0, 0 };  // Buffer to store the returned UID
-    uint8_t uidLength;                        // Length of the UID (4 or 7 bytes depending on ISO14443A card type)
-
-
-    //success = readPassiveTargetID(PN532_MIFARE_ISO14443A, &uid[0], &uidLength, 0);
-    //enable_DMA1();
+//    init_usart5();
+//    wakeup();
+//    versiondata = getFirmwareVersion();
+//    chip = (versiondata>>24) & 0xff;
+//    firmware0 = versiondata>>16 & 0xff;
+//    firmware1 = versiondata>>8  & 0xff;
+//    printf("%d\n", versiondata);
+//
+//
+//    // set max retry attempts
+//    // setPassiveActivationRetries(0xff);
+//
+//    // Configure Secure Access Module to read RFID cards
+//    SAMConfig();
+//
+//
+//    success = readPassiveTargetID(PN532_MIFARE_ISO14443A, NULL, NULL, 0);
+//    enable_DMA1();
 
 
 	//set_pin(GPIOA, 5, 1);
 	setup_external_timesync();
+
+	setup_uart1();
+	setup_tim6();
+
+	enable_ports_keypad_LED();
+	setup_tim7();
+
+
+	//setup_pcb_leds();
+
 
 	//GPIOA->BSRR |= 1 << 5;
 
@@ -73,14 +77,16 @@ int main(void)
 	uint8_t x;
 	char string[15] = "Hello, World!";
 
-	setup_uart1();
+
 
 	//wifi_sendstring("AT\r\n");
 	//wifi_checkstring("AT\r\r\n\r\nOK\r\n");
 
 	//setup_spi1();
-	setup_tim6();
 	//setup_tim15();
+
+
+
 
 	CS_HIGH;
 	RESET_LOW;
@@ -108,6 +114,14 @@ int main(void)
 
 	// enable touch
 	touchEnable(1);
+
+	// clear pre-existing touch event??
+	if (touched()) {
+		writeReg(RA8875_INTC2, RA8875_INTC2_TP);
+	}
+
+
+
 	// switch to text mode
 	textMode();
 	cursorBlink(32);
@@ -126,16 +140,21 @@ int main(void)
 
 	graphicsMode();
 
+
+	fillScreen(BLACK);
 	//setup_devboard_leds();
 	//setup_external_timesync();
 	//set_pin(GPIOC, 6, 0);
 	//set_pin(GPIOC, 7, 1);
 	//set_pin(GPIOC, 8, 1);
-	guiStateHandler(LOADING);
+	guiLOADINGInit();
+	guiMAINInit();
+	buttonArr[0].on = 1;
 	setup_t_irq();
+	guiStateHandler(LOADING);
 
 
-
+	char a;
 
 
 	/*
@@ -168,6 +187,10 @@ int main(void)
 			//textMode();
 //			}
 //		}
+
+//		a = get_keypress();
+//		keypad_values(a);
+
 	}
 
 
