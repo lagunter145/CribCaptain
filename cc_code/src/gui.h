@@ -42,5 +42,7 @@ void guiStateHandler(uint8_t state);
 uint8_t buttonHandler(int xc, int yc);
 void guiMAINInit();
 void guiLOADINGInit();
+void guiCHECKINInit();
+
 
 #endif /* GUI_H_ */

@@ -148,8 +148,11 @@ int main(void)
 	//set_pin(GPIOC, 6, 0);
 	//set_pin(GPIOC, 7, 1);
 	//set_pin(GPIOC, 8, 1);
+
+
 	guiLOADINGInit();
 	guiMAINInit();
+	guiCHECKINInit();
 	buttonArr[0].on = 1;
 	setup_t_irq();
 	guiStateHandler(LOADING);

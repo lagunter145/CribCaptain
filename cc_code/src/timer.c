@@ -233,6 +233,8 @@ void EXTI4_15_IRQHandler(void) {
 
 				}
 
+
+				guiStateHandler(guiMenuState);
 				if (guiMenuState == LOADING) {
 					//write loading to the screen
 					write_loading();
@@ -241,10 +243,8 @@ void EXTI4_15_IRQHandler(void) {
 					//update the time
 					write_time();
 				}
-				guiStateHandler(guiMenuState);
 
 			}
-		//}
 
 	}
 }
@@ -310,6 +310,7 @@ void TIM6_DAC_IRQHandler(void) {
 		//char url[200] = "worldtimeapi.org/api/timezone/America/new_york.txt";
 		//char url[200] = "timeapi.io/api/Time/current/zone?timeZone=America/Indiana/Indianapolis";
 		char url[200] = "timezone.abstractapi.com/v1/current_time/?api_key=9e51598312064a7494ae4b60562fbc71&location=Indianapolis";
+		//char url[200] = "192.168.175.87";
 
 		//connect the socket (AT+CIPSTART)
 		if (wifiHTTPState == 0) {
