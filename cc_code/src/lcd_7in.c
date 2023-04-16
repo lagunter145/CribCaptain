@@ -30,8 +30,7 @@ void nano_wait(unsigned int n) {
 void setup_spi1() {
 	// enable RCC clock to GPIO B Ports
 	RCC->AHBENR |= RCC_AHBENR_GPIOBEN;
-	// clear and set the MODER values for PB8,9,14 for outputs (01 in MODER)
-	// PB11 cleared and stays 0 to be input
+	// clear and set the MODER values for PB8,11,14 for outputs (01 in MODER)
 	GPIOB->MODER &= ~(GPIO_MODER_MODER8 /*| GPIO_MODER_MODER9*/| GPIO_MODER_MODER11 | GPIO_MODER_MODER14);
 	GPIOB->MODER |= (GPIO_MODER_MODER8_0 /*| GPIO_MODER_MODER9_0*/ | GPIO_MODER_MODER11_0 | GPIO_MODER_MODER14_0);
 	// clear and set the MODER for PB3,4,5 for alternate functions (10 in MODER)
@@ -61,6 +60,9 @@ void setup_spi1() {
 	SPI1->CR2 |= (SPI_CR2_DS_0 | SPI_CR2_DS_1 | SPI_CR2_DS_2); // sets word size to 8 bits
 	SPI1->CR2 |= SPI_CR2_FRXTH; // set RXFIFO threshold to 8 bits
 	SPI1->CR1 |= SPI_CR1_SPE;   // enable spi1
+
+	GPIOB->BSRR |= GPIO_BSRR_BR_11; // hardware reset on the display, (active-low on the controller)
+	GPIOB->BSRR |= GPIO_BSRR_BS_11; // resets the reset pin to the og value
 }
 
 // function to set SPI baud rate to fpclk/16

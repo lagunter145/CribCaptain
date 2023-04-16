@@ -16,6 +16,7 @@
 
 extern uint16_t base_color;
 extern uint16_t acce_color;
+extern uint8_t show_sec;
 volatile int tim6semaphore = 0; //0 for wifi setup, 1 for http get request
 
 volatile int jiffy = 0;
@@ -192,11 +193,19 @@ void write_time() {
 	time[2] = ':';
 	time[5] = ':';
 
+
 	textMode();
-	textSetCursor(600, 60);
+	textSetCursor(25, 25);
 	textEnlarge(2);
 	textColor(acce_color, base_color);
-	textWrite(time, 8);
+	if(show_sec) {
+		textWrite(time, 8);
+	} else {
+		textWrite(time, 5);
+		// don't like how it redraws every second, but putting in button handler
+		// caused issues with show_sec
+		drawRect(150, 25, 220, 75, base_color, 1);
+	}
 	graphicsMode();
 
 }

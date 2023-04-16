@@ -98,6 +98,7 @@ int main(void)
 	// setup functions
 	setup_spi1();
 
+
 	nano_wait(1000000);
 	x = readReg(0);
 
@@ -150,10 +151,11 @@ int main(void)
 	//set_pin(GPIOC, 8, 1);
 
 
-	guiLOADINGInit();
 	guiMAINInit();
 	guiCHECKINInit();
-	buttonArr[0].on = 1;
+	guiLOADINGInit();
+
+	buttonArr[1].on = 1;
 	setup_t_irq();
 	guiStateHandler(LOADING);
 

@@ -18,6 +18,7 @@ extern uint32_t uid;
 extern char uid_str[10];
 extern uint8_t rfid_tag[20];
 stateType guiMenuState = LOADING;
+volatile uint8_t show_sec = 0;
 
 void draw_button(struct Button *but, uint16_t button_color, uint16_t text_color) {
 	//old mode
@@ -95,7 +96,8 @@ void guiLOADINGInit(void) {
 	//clear screen
 	//fillScreen(GREEN);
 	//initialize buttons
-	buttonArr[0] = init_button(10, 350, 200, 80, "Hello", MAGENTA);
+	buttonArr[0] = init_button(25, 25, 200, 80, "", base_color);
+	buttonArr[1] = init_button(10, 350, 200, 80, "Hello", acce_color);
 	/*
 	textMode();
 	textSetCursor(600, 10);
@@ -112,7 +114,11 @@ void guiMAINInit(void) {
 	//clear screen
 	//fillScreen(YELLOW);
 	//initialize buttons
-	buttonArr[0] = init_button(10, 350, 200, 80, "button2", base_color);
+	buttonArr[0] = init_button(25, 25, 200, 80, "", MAGENTA);
+	buttonArr[1] = init_button(10, 350, 200, 80, "Loading", base_color);
+	buttonArr[2] = init_button(110, 350, 200, 80, "Calendar", base_color);
+	buttonArr[3] = init_button(210, 350, 200, 80, "Roommates", base_color);
+
 	/*
 	textMode();
 	textSetCursor(600, 10);
@@ -128,8 +134,10 @@ void guiMAINInit(void) {
 //CHECKIN screen
 void guiCHECKINInit(void) {
 	////450, 300
-	buttonArr[2] = init_button(400, 300, 20, 80, "+", base_color);
-	buttonArr[3] = init_button(500, 300, 20, 80, "-", base_color);
+	buttonArr[0] = init_button(25, 25, 200, 80, "", base_color);
+	buttonArr[1] = init_button(300, 300, 150, 80, "Enter", base_color);
+	buttonArr[2] = init_button(250, 200, 70, 80, "-", base_color);
+	buttonArr[3] = init_button(400, 200, 70, 80, "+", base_color);
 
 
 }
@@ -145,7 +153,7 @@ void guiMAINDraw(void) {
 	textWrite("MAIN", 4);
 
 	// draw button
-	draw_button(&(buttonArr[0]), YELLOW, GREEN);
+	//draw_button(&(buttonArr[0]), MAGENTA, acce_color);
 	/*
 	textSetCursor(buttonArr[0].x1, buttonArr[0].y1);
 	textTransparent(acce_color);
@@ -158,9 +166,7 @@ void guiMAINDraw(void) {
 	// clear the button flags
 	buttonArr[0].pressed = 0;
 	buttonArr[0].on = 1;
-	// turn on MAIN button
-	buttonArr[1].pressed = 0;
-	buttonArr[1].on = 0;
+
 }
 
 void guiLOADINGDraw(void) {
@@ -174,7 +180,7 @@ void guiLOADINGDraw(void) {
 	textWrite("LOADING", 7);
 
 
-	draw_button(&(buttonArr[0]), CYAN, BLUE);
+	draw_button(&(buttonArr[1]), base_color, acce_color);
 	// draw button
 	/*
 	textSetCursor(buttonArr[0].x1, buttonArr[0].y1);
@@ -183,14 +189,14 @@ void guiLOADINGDraw(void) {
 	buttonArr[0].labelLength = strlen(buttonArr[0].label);
 	textWrite(buttonArr[0].label, buttonArr[0].labelLength);
 	*/
-	graphicsMode();
 
-	// clear the button flags
-	buttonArr[1].pressed = 0;
-	buttonArr[1].on = 0;
-	// turn on MAIN button
+	// turn off TIME button
 	buttonArr[0].pressed = 0;
-	buttonArr[0].on= 1;
+	buttonArr[0].on= 0;
+
+	// turn on MAIN button
+	buttonArr[1].pressed = 0;
+	buttonArr[1].on= 1;
 }
 
 
@@ -199,53 +205,58 @@ uint8_t numberGuests = 0;
 // CHECKIN screen
 void guiCHECKINDraw(void) {
 	fillScreen(base_color);
+//
+//	draw_button(&(buttonArr[0]), acce_color, base_color);
+//	draw_button(&(buttonArr[1]), acce_color, base_color);
+//	draw_button(&(buttonArr[2]), acce_color, base_color);
+//	draw_button(&(buttonArr[3]), acce_color, base_color);
 	textMode();
 	textSetCursor(600, 10);
 	textEnlarge(2);
 	textColor(acce_color, base_color);
 	textWrite("CHECKIN", 7);
 
-	textSetCursor(100, 150);
+	textSetCursor(100, 95);
 	textWrite(uid_str, rfid_tag[12] * 2);
 
-	textSetCursor(300, 240);
+	textSetCursor(200, 140);
 	//textEnlarge(2);
 	//textColor(acce_color, base_color);
 	textWrite("How many guests?", 16);
-	textSetCursor(450, 300);
+	textSetCursor(350, 200);
 	char numGuests[2];
 	itoa(numberGuests, numGuests, 10);
     textWrite(numGuests, 2);
 
 	//buttons
-	textSetCursor(buttonArr[0].x1, buttonArr[0].y1);
-	textTransparent(acce_color);
-	strcpy(buttonArr[0].label ,"Enter");
-	buttonArr[0].labelLength = strlen(buttonArr[0].label);
-	textWrite(buttonArr[0].label, buttonArr[0].labelLength);
+    //draw_button(&(buttonArr[0]), base_color, acce_color);
 
-	textSetCursor(buttonArr[2].x1, buttonArr[2].y1);
-	strcpy(buttonArr[2].label ,"+");
+	textSetCursor(buttonArr[1].x1, buttonArr[1].y1);
+	textTransparent(acce_color);
+	strcpy(buttonArr[1].label ,"Enter");
+	buttonArr[1].labelLength = strlen(buttonArr[1].label);
+	textWrite(buttonArr[1].label, buttonArr[1].labelLength);
+
+	textSetCursor((buttonArr[2].x1 + 50), buttonArr[2].y1);
+	strcpy(buttonArr[2].label ,"-");
 	buttonArr[2].labelLength = strlen(buttonArr[2].label);
 	textWrite(buttonArr[2].label, buttonArr[2].labelLength);
 
 	textSetCursor(buttonArr[3].x1, buttonArr[3].y1);
-	strcpy(buttonArr[3].label ,"-");
+	strcpy(buttonArr[3].label ,"+");
 	buttonArr[3].labelLength = strlen(buttonArr[3].label);
 	textWrite(buttonArr[3].label, buttonArr[3].labelLength);
 
 	buttonArr[0].pressed = 0;
 	buttonArr[0].on = 1;
+	buttonArr[1].pressed = 0;
+	buttonArr[1].on = 1;
 	buttonArr[2].pressed = 0;
 	buttonArr[2].on = 1;
 	buttonArr[3].pressed = 0;
 	buttonArr[3].on = 1;
 
 	graphicsMode();
-
-
-
-
 
 }
 
@@ -276,7 +287,7 @@ void guiStateHandler(stateType state) {
 
 	switch(state) {
 		case LOADING: // current state is LOADING
-			if (buttonArr[0].pressed){
+			if (buttonArr[1].pressed){
 				// switch states
 				guiMAINInit();
 				guiMAINDraw();
@@ -286,7 +297,11 @@ void guiStateHandler(stateType state) {
 			}
 			break;
 		case MAIN:
+			// if time button is pressed, show/unshow seconds
 			if (buttonArr[0].pressed){
+				break;
+			}
+			else if (buttonArr[1].pressed){
 				// switch states
 				guiLOADINGInit();
 				guiLOADINGDraw();
@@ -297,26 +312,39 @@ void guiStateHandler(stateType state) {
 			break;
 		case CHECKIN:
 			if (card_scanned) {
+				guiCHECKINInit();
 				guiCHECKINDraw();
-			}
-
-			if (buttonArr[0].pressed) { //enter
+			} else if (buttonArr[0].pressed){
+				break;
+			} else if (buttonArr[1].pressed) { //enter
+				guiMAINInit();
 				guiMAINDraw(); //return to the Main state for now
 				guiMenuState = MAIN;
-				// acknowledge touch interrupt
-				writeReg(RA8875_INTC2, RA8875_INTC2_TP);
-			}
-			if (buttonArr[2].pressed) { //+
-				numberGuests++;
-				guiCHECKINDraw();
-			}
-			if (buttonArr[3].pressed) { //-
-				if (numberGuests > 0)
+			} else if (buttonArr[2].pressed) { //-
+				if (numberGuests < 25)
 					numberGuests--;
-				guiCHECKINDraw();
+				textMode();
+				textEnlarge(2);
+				textColor(acce_color, base_color);
+				textSetCursor(350, 200);
+				char numGuests[2];
+				itoa(numberGuests, numGuests, 10);
+				textWrite(numGuests, 2);
+				graphicsMode();
+				buttonArr[2].pressed = 0;
+			} else if (buttonArr[3].pressed) { //+
+				if (numberGuests < 25)
+					numberGuests++;
+				textMode();
+				textEnlarge(2);
+				textColor(acce_color, base_color);
+				textSetCursor(350, 200);
+				char numGuests[2];
+				itoa(numberGuests, numGuests, 10);
+				textWrite(numGuests, 2);
+				graphicsMode();
+				buttonArr[3].pressed = 0;
 			}
-
-
 			// acknowledge touch interrupt
 			writeReg(RA8875_INTC2, RA8875_INTC2_TP);
 			card_scanned = 0;
@@ -360,17 +388,27 @@ uint8_t buttonHandler(int xc, int yc) {
 //			guiStateHandler(LOADING);
 //		}
 //	}
-	uint8_t flag = 0;	// flag to indicate a GUI state is boutta change
+	uint8_t state_flag = 0;	// flag to indicate a GUI state is boutta change
 	if (buttonArr[0].on) {
         if (buttonArr[0].pressed == 0) {
         	// if button wasn't pressed, check if it's been pressed
     		buttonArr[0].pressed = check_pressed(buttonArr[0], xc, yc);
     		if(buttonArr[0].pressed) {
-    			flag = 1;
+    			if(show_sec) {
+					show_sec = 0;
+				} else {
+					show_sec = 1;
+				}
+    			buttonArr[0].pressed = 0;
     		}
         }
         else {
-        	flag = 1;
+			if(show_sec) {
+				show_sec = 0;
+			} else {
+				show_sec = 1;
+			}
+			buttonArr[0].pressed = 0;
         }
         // otherwise keep it 'pressed'
 	}
@@ -378,41 +416,40 @@ uint8_t buttonHandler(int xc, int yc) {
 		if (buttonArr[1].pressed == 0) {
 			buttonArr[1].pressed = check_pressed(buttonArr[1], xc, yc);
 			if(buttonArr[1].pressed) {
-				flag = 1;
+				state_flag = 1;
 			}
 		}
 		else {
-			flag = 1;
+			state_flag = 1;
 		}
 	}
 	if (buttonArr[2].on) {
 		if (buttonArr[2].pressed == 0) {
 			buttonArr[2].pressed = check_pressed(buttonArr[2], xc, yc);
 			if(buttonArr[2].pressed) {
-				flag = 1;
+				state_flag = 1;
 			}
 		}
 		else {
-			flag = 1;
+			state_flag = 1;
 		}
 	}
 	if (buttonArr[3].on) {
 		if (buttonArr[3].pressed == 0) {
 			buttonArr[3].pressed = check_pressed(buttonArr[3], xc, yc);
 			if(buttonArr[3].pressed) {
-				flag = 1;
+				state_flag = 1;
 			}
 		}
 		else {
-			flag = 1;
+			state_flag = 1;
 		}
 	}
-	if (flag) {
+	if (state_flag) {
 		return 1;
 	}
-	else {
-		return 0;
-	}
+	//writeReg(RA8875_INTC2, RA8875_INTC2_TP);
+	return 0;
 }
 
 
