@@ -39,9 +39,12 @@ void draw_button(struct Button *but, uint16_t button_color, uint16_t text_color)
 	//Then draw the text
 	textMode();
 	textEnlarge(2);
-	textSetCursor(but->x1, but->y1);
+	// center text in button rect
+	uint16_t start_x = (((but->x2 - but->x1) - (24 * but->labelLength)) / 2) + but->x1;
+	uint16_t start_y = (((but->y2 - but->y1) - (50)) / 2) + but->y1;
+	// textSetCursor(but->x1, but->y1);
+	textSetCursor(start_x, start_y);
 	textColor(text_color, button_color);
-	but->labelLength = strlen(but->label);
 	textWrite(but->label, but->labelLength);
 	graphicsMode();
 
@@ -58,7 +61,7 @@ Button init_button(int x, int y, int w, int h, char* label, uint16_t color){
 	but.labelLength = strlen(but.label);
     but.pressed = 0;
     but.color = color;
-    drawRect(x, y, x+w, y+h, color, 1);
+    //drawRect(x, y, x+w, y+h, color, 1);
     /*
     textMode();
 	textSetCursor(x, y);
@@ -92,6 +95,9 @@ void update_button(Button but, int x, int y, int w, int h, char*label, uint16_t 
 }
 
 // LOADING screen
+// buttons
+// buttonArr[0] is void
+// buttonArr[1] = go straight to main screen without connecting to Wifi
 void guiLOADINGInit(void) {
 	//clear screen
 	//fillScreen(GREEN);
@@ -108,67 +114,6 @@ void guiLOADINGInit(void) {
 	 *
 	 */
 }
-
-// MAIN screen
-void guiMAINInit(void) {
-	//clear screen
-	//fillScreen(YELLOW);
-	//initialize buttons
-	buttonArr[0] = init_button(25, 25, 200, 80, "", MAGENTA);
-	buttonArr[1] = init_button(10, 350, 200, 80, "Loading", base_color);
-	buttonArr[2] = init_button(110, 350, 200, 80, "Calendar", base_color);
-	buttonArr[3] = init_button(210, 350, 200, 80, "Roommates", base_color);
-
-	/*
-	textMode();
-	textSetCursor(600, 10);
-	textEnlarge(2);
-	textColor(0x8170, RA8875_WHITE);
-	textWrite("MAIN", 4);
-	graphicsMode();
-
-	write_time();
-	*/
-}
-
-//CHECKIN screen
-void guiCHECKINInit(void) {
-	////450, 300
-	buttonArr[0] = init_button(25, 25, 200, 80, "", base_color);
-	buttonArr[1] = init_button(300, 300, 150, 80, "Enter", base_color);
-	buttonArr[2] = init_button(250, 200, 70, 80, "-", base_color);
-	buttonArr[3] = init_button(400, 200, 70, 80, "+", base_color);
-
-
-}
-
-void guiMAINDraw(void) {
-	// clear screen
-	fillScreen(base_color);
-	// draw screen
-	textMode();
-	textSetCursor(600, 10);
-	textEnlarge(2);
-	textColor(acce_color, base_color);
-	textWrite("MAIN", 4);
-
-	// draw button
-	//draw_button(&(buttonArr[0]), MAGENTA, acce_color);
-	/*
-	textSetCursor(buttonArr[0].x1, buttonArr[0].y1);
-	textTransparent(acce_color);
-	strcpy(buttonArr[0].label, "button2");
-	buttonArr[0].labelLength = strlen(buttonArr[0].label);
-	textWrite(buttonArr[0].label, buttonArr[0].labelLength);
-	graphicsMode();
-	*/
-
-	// clear the button flags
-	buttonArr[0].pressed = 0;
-	buttonArr[0].on = 1;
-
-}
-
 void guiLOADINGDraw(void) {
 	// clear screen
 	fillScreen(base_color);
@@ -200,9 +145,84 @@ void guiLOADINGDraw(void) {
 }
 
 
+
+
+// MAIN screen
+// buttons
+// buttonArr[0] = second toggling for displaying time
+// buttonArr[1] = back to Loading screen
+// buttonArr[2] = Calendar screen
+// buttonArr[3] = Roommates screen
+void guiMAINInit(void) {
+	//clear screen
+	//fillScreen(YELLOW);
+	//initialize buttons
+	buttonArr[0] = init_button(25, 25, 200, 80, "", acce_color);
+	buttonArr[1] = init_button(25, 350, 200, 80, "Loading", acce_color);
+	buttonArr[2] = init_button(275, 350, 200, 80, "Calendar", acce_color);
+	buttonArr[3] = init_button(525, 350, 250, 80, "Roommates", acce_color);
+
+	/*
+	textMode();
+	textSetCursor(600, 10);
+	textEnlarge(2);
+	textColor(0x8170, RA8875_WHITE);
+	textWrite("MAIN", 4);
+	graphicsMode();
+
+	write_time();
+	*/
+}
+void guiMAINDraw(void) {
+	// clear screen
+	fillScreen(base_color);
+	// draw screen
+	// draw button
+	draw_button(&(buttonArr[1]), acce_color, base_color);
+	draw_button(&(buttonArr[2]), acce_color, base_color);
+	draw_button(&(buttonArr[3]), acce_color, base_color);
+	textMode();
+	textSetCursor(600, 10);
+	textEnlarge(2);
+	textColor(acce_color, base_color);
+	textWrite("MAIN", 4);
+
+//	textSetCursor(buttonArr[0].x1, buttonArr[0].y1);
+//	textTransparent(base_color);
+//	strcpy(buttonArr[1].label, "button2");
+//	buttonArr[1].labelLength = strlen(buttonArr[1].label);
+//	textWrite(buttonArr[1].label, buttonArr[1].labelLength);
+	graphicsMode();
+
+
+	// clear the button flags
+	buttonArr[0].pressed = 0;
+	buttonArr[0].on = 1;
+	buttonArr[1].pressed = 0;
+	buttonArr[1].on = 1;
+	buttonArr[2].pressed = 0;
+	buttonArr[2].on = 1;
+	buttonArr[3].pressed = 0;
+	buttonArr[3].on = 1;
+
+
+}
+
 uint8_t numberGuests = 0;
 
 // CHECKIN screen
+// buttons
+// buttonArr[0] = second toggling for displaying time
+// buttonArr[1] = saves number of guests that roommate brought, exits to main screen
+// buttonArr[2] = decrement number of guests that roommate brought
+// buttonArr[3] = increment number of guests that roommate brought
+void guiCHECKINInit(void) {
+	////450, 300
+	buttonArr[0] = init_button(25, 25, 200, 80, "", base_color);
+	buttonArr[1] = init_button(300, 300, 150, 80, "Enter", base_color);
+	buttonArr[2] = init_button(250, 200, 70, 80, "-", base_color);
+	buttonArr[3] = init_button(400, 200, 70, 80, "+", base_color);
+}
 void guiCHECKINDraw(void) {
 	fillScreen(base_color);
 //
@@ -257,7 +277,6 @@ void guiCHECKINDraw(void) {
 	buttonArr[3].on = 1;
 
 	graphicsMode();
-
 }
 
 void guiState2Init(void) {
@@ -299,13 +318,19 @@ void guiStateHandler(stateType state) {
 		case MAIN:
 			// if time button is pressed, show/unshow seconds
 			if (buttonArr[0].pressed){
-				break;
-			}
-			else if (buttonArr[1].pressed){
+				buttonArr[0].pressed = 0;
+			} else if (buttonArr[1].pressed){
 				// switch states
 				guiLOADINGInit();
 				guiLOADINGDraw();
 				guiMenuState = LOADING;
+				// acknowledge touch interrupt
+				writeReg(RA8875_INTC2, RA8875_INTC2_TP);
+			} else if (buttonArr[2].pressed) {
+				// switch states
+				guiCALENDARInit();
+				guiCALENDARDraw();
+				guiMenuState = CALENDAR;
 				// acknowledge touch interrupt
 				writeReg(RA8875_INTC2, RA8875_INTC2_TP);
 			}
@@ -315,7 +340,7 @@ void guiStateHandler(stateType state) {
 				guiCHECKINInit();
 				guiCHECKINDraw();
 			} else if (buttonArr[0].pressed){
-				break;
+				buttonArr[0].pressed = 0;
 			} else if (buttonArr[1].pressed) { //enter
 				guiMAINInit();
 				guiMAINDraw(); //return to the Main state for now
@@ -400,6 +425,7 @@ uint8_t buttonHandler(int xc, int yc) {
 					show_sec = 1;
 				}
     			buttonArr[0].pressed = 0;
+    			writeReg(RA8875_INTC2, RA8875_INTC2_TP);
     		}
         }
         else {
@@ -409,6 +435,7 @@ uint8_t buttonHandler(int xc, int yc) {
 				show_sec = 1;
 			}
 			buttonArr[0].pressed = 0;
+			writeReg(RA8875_INTC2, RA8875_INTC2_TP);
         }
         // otherwise keep it 'pressed'
 	}

@@ -16,7 +16,9 @@
 typedef enum {
 	LOADING,
 	MAIN,
-	CHECKIN
+	CHECKIN,
+	CALENDAR,
+	ROOMMATES
 } stateType;
 
 typedef struct Button{
@@ -43,6 +45,10 @@ uint8_t buttonHandler(int xc, int yc);
 void guiMAINInit();
 void guiLOADINGInit();
 void guiCHECKINInit();
+void guiCALENDARInit();
+void guiCALENDARDraw();
+void guiROOMMATESInit();
+void guiROOMMATESDraw();
 
 
 #endif /* GUI_H_ */
