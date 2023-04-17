@@ -10,6 +10,9 @@
 
 #include "stm32f0xx.h"
 #include "lcd_7in.h"
+#include "stdlib.h"
+#include "stdint.h"
+#include <stdio.h>
 
 #define NUM_BUT  15
 
@@ -18,7 +21,8 @@ typedef enum {
 	MAIN,
 	CHECKIN,
 	CALENDAR,
-	ROOMMATES
+	ROOMMATES,
+	MSG
 } stateType;
 
 typedef struct Button{
@@ -33,6 +37,7 @@ typedef struct Button{
     uint16_t color;
 } Button;
 
+
 extern uint8_t _textScale;
 Button buttonArr[NUM_BUT];
 
@@ -44,11 +49,17 @@ void guiStateHandler(uint8_t state);
 uint8_t buttonHandler(int xc, int yc);
 void guiMAINInit();
 void guiLOADINGInit();
+void guiLOADINGDraw();
+void drawPic(int start_x, int start_y);
+void bmpDraw(char* filename, int start_x, int start_y);
+uint16_t color565(uint8_t r, uint8_t g, uint8_t b);
 void guiCHECKINInit();
 void guiCALENDARInit();
 void guiCALENDARDraw();
 void guiROOMMATESInit();
 void guiROOMMATESDraw();
+void checkmark(uint16_t start_x, uint16_t start_y);
+void guiMSGInit();
 
 
 #endif /* GUI_H_ */

@@ -16,11 +16,12 @@
   ******************************************************************************
 */
 #include "keypad_test.h"
-#include "colours.h"
+
+#include "colors.h"
 
 extern volatile uint16_t base_color;
 extern volatile uint16_t acce_color;
-extern volatile uint16_t colour_pairs[16][2];
+extern volatile uint16_t color_pairs[16][2];
 extern volatile uint8_t colorUpdated;
 
 //enables GPIO ports for Keypad and LEDs
@@ -160,47 +161,47 @@ int Keypad_to_LEDs(int col_val, int row1, int row2, int row3, int row4){
     if(col_val == 4){
         if(row1 == 1){
             //HEX: 1
-            base_color = colour_pairs[0][0];
-        	acce_color = colour_pairs[0][1];
+            base_color = color_pairs[0][0];
+        	acce_color = color_pairs[0][1];
             val = '1';
         }
         else if(row2 == 1){
             //HEX: 4
-        	base_color = colour_pairs[3][0];
-        	acce_color = colour_pairs[3][1];
+        	base_color = color_pairs[3][0];
+        	acce_color = color_pairs[3][1];
             val = '4';
 
         }
         else if(row3 == 1){
             //HEX: 7
-        	base_color = colour_pairs[5][0];
-        	acce_color = colour_pairs[5][1];
+        	base_color = color_pairs[5][0];
+        	acce_color = color_pairs[5][1];
             val = '7';
         }
         else if(row4 == 1)  {
             //HEX: * -- treated as E for the purpose of this test
-        	base_color = colour_pairs[13][0];
-        	acce_color = colour_pairs[13][1];
+        	base_color = color_pairs[13][0];
+        	acce_color = color_pairs[13][1];
             val = '*';
         }
     }
     else if(col_val == 3){
         if(row1 == 1){
             //HEX:2
-        	base_color = colour_pairs[1][0];
-        	acce_color = colour_pairs[1][1];
+        	base_color = color_pairs[1][0];
+        	acce_color = color_pairs[1][1];
             val = '2';
         }
         else if(row2 == 1){
             //HEX: 5
-        	base_color = colour_pairs[4][0];
-        	acce_color = colour_pairs[4][1];
+        	base_color = color_pairs[4][0];
+        	acce_color = color_pairs[4][1];
             val = '5';
         }
         else if(row3 == 1){
             //HEX: 8
-        	base_color = colour_pairs[7][0];
-        	acce_color = colour_pairs[7][1];
+        	base_color = color_pairs[7][0];
+        	acce_color = color_pairs[7][1];
             val = '8';
         }
         else if(row4 == 1){
@@ -211,53 +212,53 @@ int Keypad_to_LEDs(int col_val, int row1, int row2, int row3, int row4){
     else if(col_val == 2){
         if(row1 == 1){
             //HEX: 3
-        	base_color = colour_pairs[2][0];
-        	acce_color = colour_pairs[2][1];
+        	base_color = color_pairs[2][0];
+        	acce_color = color_pairs[2][1];
             val = '3';
         }
         else if(row2 == 1){
             //HEX: 6
-        	base_color = colour_pairs[5][0];
-        	acce_color = colour_pairs[5][1];
+        	base_color = color_pairs[5][0];
+        	acce_color = color_pairs[5][1];
             val = '6';
         }
         else if(row3 == 1){
             //HEX: 9
-        	base_color = colour_pairs[8][0];
-        	acce_color = colour_pairs[8][1];
+        	base_color = color_pairs[8][0];
+        	acce_color = color_pairs[8][1];
             val = '9';
         }
         else if(row4 == 1) {
             //HEX: # -- treated as F for purpose of this test
-        	base_color = colour_pairs[14][0];
-        	acce_color = colour_pairs[14][1];
+        	base_color = color_pairs[14][0];
+        	acce_color = color_pairs[14][1];
             val = '#';
         }
     }
     else if(col_val == 1){
         if(row1 == 1){
             //HEX: A
-        	base_color = colour_pairs[9][0];
-        	acce_color = colour_pairs[9][1];
+        	base_color = color_pairs[9][0];
+        	acce_color = color_pairs[9][1];
             val = 'A';
         }
         else if(row2 == 1){
             //HEX: B
-        	base_color = colour_pairs[10][0];
-        	acce_color = colour_pairs[10][1];
+        	base_color = color_pairs[10][0];
+        	acce_color = color_pairs[10][1];
             val = 'B';
         }
         else if(row3 == 1){
             //HEX: C
-        	base_color = colour_pairs[11][0];
-        	acce_color = colour_pairs[11][1];
+        	base_color = color_pairs[11][0];
+        	acce_color = color_pairs[11][1];
             val = 'C';
         }
         else if(row4 == 1){
             //HEX: D
             val = 'D';
-            base_color = colour_pairs[12][0];
-            acce_color = colour_pairs[12][1];
+            base_color = color_pairs[12][0];
+            acce_color = color_pairs[12][1];
         }
     }
 

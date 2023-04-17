@@ -138,8 +138,12 @@ void DMA1_CH1_IRQHandler(void) {
 		USART5->CR3 |= USART_CR3_DMAT | USART_CR3_DMAR;
 		DMA1_Channel1->CNDTR = 19;
 	    DMA1_Channel1->CCR |= DMA_CCR_EN;
-	    card_scanned = 1;
-	    guiMenuState = CHECKIN;
+	    if(guiMenuState == MSG) {
+	    	guiMenuState = MSG;
+	    } else if(guiMenuState != CHECKIN) {
+	    	card_scanned = 1;
+	    	guiMenuState = CHECKIN;
+	    }
 
 	}
 }

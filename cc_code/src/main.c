@@ -20,6 +20,7 @@
 //#include "keypad_support.h"
 #include "keypad_test.h"
 #include "gui.h"
+#include "roommates.h"
 			
 extern uint8_t rfid_tag[20];
 extern char uid_str[10];
@@ -153,11 +154,16 @@ int main(void)
 
 	guiMAINInit();
 	guiCHECKINInit();
+	guiCALENDARInit();
 	guiLOADINGInit();
+	//guiLOADINGDraw();
 
-	buttonArr[1].on = 1;
 	setup_t_irq();
 	guiStateHandler(LOADING);
+
+	getRoommateData();
+
+	buttonArr[1].on = 1;
 
 
 	char a;

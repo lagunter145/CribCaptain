@@ -1,5 +1,5 @@
 /*
- * colours.c
+ * colors.c
  *
  *  Created on: Apr 14, 2023
  *      Author: gunter3
@@ -7,14 +7,14 @@
 
 #include "stm32f0xx.h"
 #include <stdint.h>
-#include "colours.h"
+#include "colors.h"
 
 volatile uint16_t base_color = 0x0000; //background
 volatile uint16_t acce_color = 0xFFFF; //text
 volatile uint8_t colorUpdated = 0;
 
-// colour pairs, 1st color is base and 2nd is accent
-uint16_t colour_pairs[16][2] = {
+// color pairs, 1st color is base and 2nd is accent
+uint16_t color_pairs[16][2] = {
 		// Black and White : "1"
 		{0x0000, 0xFFFF},
 		// White and Black : "2"

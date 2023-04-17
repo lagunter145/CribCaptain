@@ -11,13 +11,15 @@
 #include <stdlib.h>
 #include "lcd_7in.h"
 #include "timer.h"
+
+#include "colors.h"
 #include "gui.h"
-#include "colours.h"
 
 extern uint16_t base_color;
 extern uint16_t acce_color;
 extern uint8_t show_sec;
 volatile int tim6semaphore = 0; //0 for wifi setup, 1 for http get request
+extern volatile uint8_t messaging;
 
 volatile int jiffy = 0;
 volatile int second = 0;
@@ -25,6 +27,7 @@ volatile int minute = 0;
 volatile int hour = 0;
 extern volatile uint8_t canTouch;
 extern stateType guiMenuState;
+extern uint8_t piccing;
 //Sets up the time synchronization for the device
 void setup_external_timesync() {
 
@@ -158,21 +161,24 @@ void write_loading() {
 	textSetCursor(250, 100);
 	textEnlarge(4);
 	textColor(acce_color, base_color);
-	if (loadingCounter == 0)
-		textWrite("LOADING   ", 10);
-	if (loadingCounter == 1)
-			textWrite("LOADING.  ", 10);
-	if (loadingCounter == 2)
-			textWrite("LOADING.. ", 10);
-	if (loadingCounter == 3)
-			textWrite("LOADING...", 10);
-	graphicsMode();
-	if (loadingCounter >= 3)
-		loadingCounter = 0;
-	else {
-		loadingCounter++;
+	if(!piccing) {
+		if (loadingCounter == 0)
+			textWrite("LOADING   ", 10);
+		if (loadingCounter == 1)
+				textWrite("LOADING.  ", 10);
+		if (loadingCounter == 2)
+				textWrite("LOADING.. ", 10);
+		if (loadingCounter == 3)
+				textWrite("LOADING...", 10);
+		graphicsMode();
+		if (loadingCounter >= 3)
+			loadingCounter = 0;
+		else {
+			loadingCounter++;
+		}
 	}
 }
+
 
 void write_time() {
 
@@ -195,7 +201,7 @@ void write_time() {
 
 
 	textMode();
-	textSetCursor(25, 25);
+	textSetCursor(25, 10);
 	textEnlarge(2);
 	textColor(acce_color, base_color);
 	if(show_sec) {
@@ -204,7 +210,7 @@ void write_time() {
 		textWrite(time, 5);
 		// don't like how it redraws every second, but putting in button handler
 		// caused issues with show_sec
-		drawRect(150, 25, 220, 75, base_color, 1);
+		drawRect(150, 22, 220, 60, base_color, 1);
 	}
 	graphicsMode();
 
@@ -244,11 +250,16 @@ void EXTI4_15_IRQHandler(void) {
 
 
 				guiStateHandler(guiMenuState);
-				if (guiMenuState == LOADING) {
+				if ((guiMenuState == LOADING) && (!piccing)) {
 					//write loading to the screen
 					write_loading();
-				}
-				else {
+				} else if (guiMenuState == MSG) {
+					messaging++;
+					if(messaging > 5) {
+						messaging = 0;
+					}
+
+				} else {
 					//update the time
 					write_time();
 				}

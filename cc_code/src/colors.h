@@ -5,8 +5,8 @@
  *      Author: gunter3
  */
 
-#ifndef COLOURS_H_
-#define COLOURS_H_
+#ifndef COLORS_H_
+#define COLORS_H_
 
 
-#endif /* COLOURS_H_ */
+#endif /* COLORS_H_ */

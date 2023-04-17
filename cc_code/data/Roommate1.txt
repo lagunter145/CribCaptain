@@ -1,0 +1,3 @@
+Roommate_Name: Lauren
+Home: 0
+NumGuests: 0

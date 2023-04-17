@@ -13,14 +13,14 @@
 #include "keypad_debounced.h"
 #include "keypad_support.h"
 #include "RA8775_commands.h"
-#include "colours.h"
+#include "colors.h"
 #include "gui.h"
 #include "timer.h"
 
 extern stateType guiMenuState;
 extern uint16_t base_color;
 extern uint16_t acce_color;
-extern uint16_t colour_pairs[16][2];
+extern uint16_t color_pairs[16][2];
 
 uint8_t c = 1;
 uint8_t r = 0;
@@ -99,68 +99,68 @@ void TIM7_IRQHandler()
 void keypad_values(char val){
     switch(val){
     case '1':
-        base_color = colour_pairs[0][0];
-        acce_color = colour_pairs[0][1];
+        base_color = color_pairs[0][0];
+        acce_color = color_pairs[0][1];
         break;
     case '2':
-    	base_color = colour_pairs[1][0];
-	    acce_color = colour_pairs[1][1];
+    	base_color = color_pairs[1][0];
+	    acce_color = color_pairs[1][1];
         break;
     case '3':
-    	base_color = colour_pairs[2][0];
-		acce_color = colour_pairs[2][1];
+    	base_color = color_pairs[2][0];
+		acce_color = color_pairs[2][1];
         break;
     case '4':
-    	base_color = colour_pairs[3][0];
-		acce_color = colour_pairs[3][1];
+    	base_color = color_pairs[3][0];
+		acce_color = color_pairs[3][1];
         break;
     case '5':
-    	base_color = colour_pairs[4][0];
-		acce_color = colour_pairs[4][1];
+    	base_color = color_pairs[4][0];
+		acce_color = color_pairs[4][1];
          break;
     case '6':
-    	base_color = colour_pairs[5][0];
-		acce_color = colour_pairs[5][1];
+    	base_color = color_pairs[5][0];
+		acce_color = color_pairs[5][1];
         break;
     case '7':
-    	base_color = colour_pairs[6][0];
-		acce_color = colour_pairs[6][1];
+    	base_color = color_pairs[6][0];
+		acce_color = color_pairs[6][1];
         break;
     case '8':
-    	base_color = colour_pairs[7][0];
-		acce_color = colour_pairs[7][1];
+    	base_color = color_pairs[7][0];
+		acce_color = color_pairs[7][1];
         break;
     case '9':
-    	base_color = colour_pairs[8][0];
-		acce_color = colour_pairs[8][1];
+    	base_color = color_pairs[8][0];
+		acce_color = color_pairs[8][1];
         break;
     case 'A':
-    	base_color = colour_pairs[9][0];
-		acce_color = colour_pairs[9][1];
+    	base_color = color_pairs[9][0];
+		acce_color = color_pairs[9][1];
         break;
     case 'B':
-    	base_color = colour_pairs[10][0];
-		acce_color = colour_pairs[10][1];
+    	base_color = color_pairs[10][0];
+		acce_color = color_pairs[10][1];
         break;
     case 'C':
-    	base_color = colour_pairs[11][0];
-		acce_color = colour_pairs[11][1];
+    	base_color = color_pairs[11][0];
+		acce_color = color_pairs[11][1];
         break;
     case 'D':
-    	base_color = colour_pairs[12][0];
-		acce_color = colour_pairs[12][1];
+    	base_color = color_pairs[12][0];
+		acce_color = color_pairs[12][1];
         break;
     case '*':
-    	base_color = colour_pairs[13][0];
-		acce_color = colour_pairs[13][1];
+    	base_color = color_pairs[13][0];
+		acce_color = color_pairs[13][1];
         break;
     case '#':
-    	base_color = colour_pairs[14][0];
-		acce_color = colour_pairs[14][1];
+    	base_color = color_pairs[14][0];
+		acce_color = color_pairs[14][1];
         break;
     case '0':
-    	base_color = colour_pairs[15][0];
-		acce_color = colour_pairs[15][1];
+    	base_color = color_pairs[15][0];
+		acce_color = color_pairs[15][1];
         break;
     default:
         break;

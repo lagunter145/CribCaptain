@@ -8,8 +8,11 @@
 #include "gui.h"
 #include <string.h>
 #include "timer.h"
-#include "colours.h"
+#include "colors.h"
 #include "rfid.h"
+#include "roommates.h"
+#include "cc_pic.h"
+#include <stdio.h>
 
 extern uint16_t base_color;
 extern uint16_t acce_color;
@@ -19,6 +22,46 @@ extern char uid_str[10];
 extern uint8_t rfid_tag[20];
 stateType guiMenuState = LOADING;
 volatile uint8_t show_sec = 0;
+volatile uint8_t messaging = 0;
+extern volatile int second;
+extern uint8_t cc_pic[];
+volatile uint8_t piccing = 0;
+
+extern Roommate roommates[MAXNUM_ROOMMATES];
+
+char* ways_to_say_goodbye[] = {"Look_after yourself!",
+							"Live long and prosper",
+							"Bye bye, cute munchkin",
+							"Don't take any elevators today!",
+							"Fare thee well",
+							"Don't get runover :)",
+							"Ok bye, fry guy",
+							"Please, take the kids with you",
+							"Love, peace, and chicken grease",
+							"Shine on, you crazy diamond",
+							"Try not to sin today",
+							"So long, King Kong",
+							"Until next millenia",
+							"Later, hater",
+							"I'm not programmed to miss you :)",
+							"Chop, chop, lollipop"};
+
+char* intruder_msg[] = {	"Are you sure you live here?",
+						"Leave, hun",
+						"I'm callin' the police",
+						"INTRUDER ALERT",
+						"Alexa, code RED",
+						"404 Not Found",
+						"Don't make me grab my bat",
+						"Readying the missile system",
+						"Rat traps ahead. Proceed with caution.",
+						"No trespassing",
+						"Releasing army of rats",
+						"Mmm, I don't know you ",
+						"Not on the list, bucko"
+};
+int ways_to_say_goodbye_size = 16;
+int intruder_msg_size = 13;
 
 void draw_button(struct Button *but, uint16_t button_color, uint16_t text_color) {
 	//old mode
@@ -100,9 +143,10 @@ void update_button(Button but, int x, int y, int w, int h, char*label, uint16_t 
 // buttonArr[1] = go straight to main screen without connecting to Wifi
 void guiLOADINGInit(void) {
 	//clear screen
-	//fillScreen(GREEN);
+	fillScreen(base_color);
+	//bmpDraw("cc_icon.bmp", 200, 200);
 	//initialize buttons
-	buttonArr[0] = init_button(25, 25, 200, 80, "", base_color);
+	buttonArr[0] = init_button(0, 0, 250, 100, "", base_color);
 	buttonArr[1] = init_button(10, 350, 200, 80, "Hello", acce_color);
 	/*
 	textMode();
@@ -118,6 +162,7 @@ void guiLOADINGDraw(void) {
 	// clear screen
 	fillScreen(base_color);
 	// draw button
+	graphicsMode();
 	textMode();
 	textSetCursor(600, 10);
 	textEnlarge(2);
@@ -143,6 +188,148 @@ void guiLOADINGDraw(void) {
 	buttonArr[1].pressed = 0;
 	buttonArr[1].on= 1;
 }
+int pic_size = 50;
+int pix_w = 3;
+
+void drawPic(int start_x, int start_y) {
+	piccing = 1;
+	graphicsMode();
+	uint16_t col;
+	int i = 0;
+	int x = start_x;
+	int y = start_y;
+	for(int r = 0; r < pic_size; r++) {
+		for(int c = 0; c < pic_size; c++) {
+			i = (r * 2 * pic_size) + c;
+			col = (cc_pic[i] << 8) + cc_pic[i + 1];
+			drawRect(x, y, (x + pix_w), (y + pix_w), col, 1);
+			x += pix_w;
+		}
+		x = start_x;
+		y += pix_w;
+	}
+	piccing = 0;
+}
+
+#define BUFFPIXEL 5
+void bmpDraw(char* filename, int start_x, int start_y) {
+	FILE*     bmpFile;
+	int      bmpWidth, bmpHeight;   // W+H in pixels
+	uint8_t  bmpDepth;              // Bit depth (currently must be 24)
+	uint32_t bmpImageoffset;        // Start of image data in file
+	uint32_t rowSize;               // Not always = bmpWidth; may have padding
+	uint8_t  sdbuffer[3*BUFFPIXEL]; // pixel in buffer (R+G+B per pixel)
+	uint16_t lcdbuffer[BUFFPIXEL];  // pixel out buffer (16-bit per pixel)
+	uint8_t  buffidx = sizeof(sdbuffer); // Current position in sdbuffer
+	int  goodBmp = 0;       // Set to true on valid header parse
+	int  flip    = 1;        // BMP is stored bottom-to-top
+	int      w, h, row, col;
+	uint8_t  r, g, b;
+	uint32_t pos = 0;
+	uint8_t  lcdidx = 0;
+
+	if((start_x >= 800) || (start_y >= 480)) return;
+
+	// Open requested file on SD card
+	if ((bmpFile = open(filename)) == 0) {
+	return;
+	}
+
+	uint16_t temp_s;
+	uint32_t temp_l;
+	// Parse BMP header
+	read(bmpFile, temp_s, sizeof(temp_s));
+	if(temp_s == 0x4D42) { // BMP signature
+	read(bmpFile, temp_l, sizeof(temp_l)); // Read & ignore creator bytes
+	read(bmpFile, temp_l, sizeof(temp_l));
+	bmpImageoffset = temp_l; // Start of image data
+
+	// Read DIB header
+	read(bmpFile, temp_l, sizeof(temp_l));
+	bmpWidth  = temp_l;
+	read(bmpFile, temp_l, sizeof(temp_l));
+	bmpHeight = temp_l;
+
+	read(bmpFile, temp_s, sizeof(temp_s));
+	if(temp_s == 1) { // # planes -- must be '1'
+	  read(bmpFile, temp_s, sizeof(temp_s));
+	  bmpDepth = temp_s; // bits per pixel
+	  read(bmpFile, temp_l, sizeof(temp_l));
+	  if((bmpDepth == 24) && (temp_l == 0)) { // 0 = uncompressed
+		goodBmp = 1; // Supported BMP format -- proceed!
+
+		// BMP rows are padded (if needed) to 4-byte boundary
+		rowSize = (bmpWidth * 3 + 3) & ~3;
+
+		// If bmpHeight is negative, image is in top-down order.
+		// This is not canon but has been observed in the wild.
+		if(bmpHeight < 0) {
+		  bmpHeight = -bmpHeight;
+		  flip      = 0;
+		}
+
+		// Crop area to be loaded
+		w = bmpWidth;
+		h = bmpHeight;
+		if((start_x+w-1) >= 800)  w = 800  - start_x;
+		if((start_y+h-1) >= 480) h = 480 - start_y;
+
+		// Set TFT address window to clipped image bounds
+
+		for (row=0; row<h; row++) { // For each scanline...
+		  // Seek to start of scan line.  It might seem labor-
+		  // intensive to be doing this on every line, but this
+		  // method covers a lot of gritty details like cropping
+		  // and scanline padding.  Also, the seek only takes
+		  // place if the file position actually needs to change
+		  // (avoids a lot of cluster math in SD library).
+		  if(flip) // Bitmap is stored bottom-to-top order (normal BMP)
+			pos = bmpImageoffset + (bmpHeight - 1 - row) * rowSize;
+		  else     // Bitmap is stored top-to-bottom
+		  pos = bmpImageoffset + row * rowSize;
+		  if(ftell(bmpFile) != pos) { // Need seek?
+			fseek(bmpFile,pos,SEEK_END);
+			buffidx = sizeof(sdbuffer); // Force buffer reload
+		  }
+
+		  for (col=0; col<w; col++) { // For each column...
+			// Time to read more pixel data?
+			if (buffidx >= sizeof(sdbuffer)) { // Indeed
+			  // Push LCD buffer to the display first
+			  if(lcdidx > 0) {
+				drawRect(col+start_x, row+start_y, col+start_x+1, row+start_y+1, lcdbuffer[lcdidx],1);
+				lcdidx = 0;
+			  }
+
+			  read(bmpFile, sdbuffer, sizeof(sdbuffer));
+			  buffidx = 0; // Set index to beginning
+			}
+
+			// Convert pixel from BMP to TFT format
+			b = sdbuffer[buffidx++];
+			g = sdbuffer[buffidx++];
+			r = sdbuffer[buffidx++];
+			lcdbuffer[lcdidx] = color565(r,g,b);
+			drawRect(col+start_x, row+start_y, col+start_x+1, row+start_y+1, lcdbuffer[lcdidx],1);
+		  } // end pixel
+
+		} // end scanline
+
+		// Write any remaining data to LCD
+		if(lcdidx > 0) {
+			drawRect(col+start_x, row+start_y, col+start_x+1, row+start_y+1, lcdbuffer[lcdidx],1);
+		}
+
+	  } // end goodBmp
+	}
+	}
+
+	close(bmpFile);
+}
+
+uint16_t color565(uint8_t r, uint8_t g, uint8_t b) {
+  return ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3);
+}
 
 
 
@@ -157,7 +344,7 @@ void guiMAINInit(void) {
 	//clear screen
 	//fillScreen(YELLOW);
 	//initialize buttons
-	buttonArr[0] = init_button(25, 25, 200, 80, "", acce_color);
+	buttonArr[0] = init_button(0, 0, 250, 100, "", base_color);
 	buttonArr[1] = init_button(25, 350, 200, 80, "Loading", acce_color);
 	buttonArr[2] = init_button(275, 350, 200, 80, "Calendar", acce_color);
 	buttonArr[3] = init_button(525, 350, 250, 80, "Roommates", acce_color);
@@ -209,7 +396,8 @@ void guiMAINDraw(void) {
 }
 
 uint8_t numberGuests = 0;
-
+uint8_t found_rm = 0;
+Roommate* temp_rm;
 // CHECKIN screen
 // buttons
 // buttonArr[0] = second toggling for displaying time
@@ -218,54 +406,85 @@ uint8_t numberGuests = 0;
 // buttonArr[3] = increment number of guests that roommate brought
 void guiCHECKINInit(void) {
 	////450, 300
-	buttonArr[0] = init_button(25, 25, 200, 80, "", base_color);
-	buttonArr[1] = init_button(300, 300, 150, 80, "Enter", base_color);
-	buttonArr[2] = init_button(250, 200, 70, 80, "-", base_color);
-	buttonArr[3] = init_button(400, 200, 70, 80, "+", base_color);
+	buttonArr[0] = init_button(0, 0, 250, 100, "", base_color);
+	buttonArr[1] = init_button(288, 300, 150, 80, "Enter", acce_color);
+	buttonArr[2] = init_button(250, 200, 70, 80, "-", acce_color);
+	buttonArr[3] = init_button(400, 200, 70, 80, "+", acce_color);
 }
+
+int srand_set = 0;
 void guiCHECKINDraw(void) {
-	fillScreen(base_color);
+	if(!srand_set) {
+		srand(2147483647 / second);
+	}
+	for(int i = 0; i < MAXNUM_ROOMMATES; i++) {
+		if(strcmp(roommates[i].uid_str, uid_str) == 0) {
+			temp_rm = &roommates[i];
+			found_rm = 1;
+		}
+	}
+	if(!found_rm) { // miss gurl, you were not found in the dAtAbAsE
+		//fillScreen(RED);
+		char* msg = intruder_msg[rand() % intruder_msg_size];
+		//char* msg = "BAD";
+		guiMSGInit(msg);
+		guiMenuState = MSG;
+		return;
+	}
 //
 //	draw_button(&(buttonArr[0]), acce_color, base_color);
-//	draw_button(&(buttonArr[1]), acce_color, base_color);
-//	draw_button(&(buttonArr[2]), acce_color, base_color);
-//	draw_button(&(buttonArr[3]), acce_color, base_color);
-	textMode();
-	textSetCursor(600, 10);
-	textEnlarge(2);
-	textColor(acce_color, base_color);
-	textWrite("CHECKIN", 7);
 
-	textSetCursor(100, 95);
-	textWrite(uid_str, rfid_tag[12] * 2);
+	if(temp_rm->home){
+		temp_rm->home = 0;
+		temp_rm->num_guests = 0;
+		char* msg = ways_to_say_goodbye[rand() % ways_to_say_goodbye_size];
+		//char* msg = "Bye Felicia";
+		guiMSGInit(msg);
+		guiMenuState = MSG;
+		return;
+	} else {
+		fillScreen(base_color);
+		draw_button(&(buttonArr[1]), acce_color, base_color);
+		draw_button(&(buttonArr[2]), acce_color, base_color);
+		draw_button(&(buttonArr[3]), acce_color, base_color);
+		textMode();
+		textSetCursor(600, 10);
+		textEnlarge(2);
+		textColor(acce_color, base_color);
+		textWrite("CHECKIN", 7);
+		textSetCursor(100, 80);
+		textWrite(temp_rm->name, temp_rm->nameLength);
+		temp_rm->home = 1;
+		textSetCursor(200, 140);
+		//textEnlarge(2);
+		//textColor(acce_color, base_color);
+		textWrite("How many guests?", 16);
+		textSetCursor(350, 215);
+		char numGuests[2];
+		itoa(numberGuests, numGuests, 10);
+	    textWrite(numGuests, 2);
+	}
 
-	textSetCursor(200, 140);
-	//textEnlarge(2);
-	//textColor(acce_color, base_color);
-	textWrite("How many guests?", 16);
-	textSetCursor(350, 200);
-	char numGuests[2];
-	itoa(numberGuests, numGuests, 10);
-    textWrite(numGuests, 2);
+
 
 	//buttons
     //draw_button(&(buttonArr[0]), base_color, acce_color);
 
-	textSetCursor(buttonArr[1].x1, buttonArr[1].y1);
-	textTransparent(acce_color);
-	strcpy(buttonArr[1].label ,"Enter");
-	buttonArr[1].labelLength = strlen(buttonArr[1].label);
-	textWrite(buttonArr[1].label, buttonArr[1].labelLength);
-
-	textSetCursor((buttonArr[2].x1 + 50), buttonArr[2].y1);
-	strcpy(buttonArr[2].label ,"-");
-	buttonArr[2].labelLength = strlen(buttonArr[2].label);
-	textWrite(buttonArr[2].label, buttonArr[2].labelLength);
-
-	textSetCursor(buttonArr[3].x1, buttonArr[3].y1);
-	strcpy(buttonArr[3].label ,"+");
-	buttonArr[3].labelLength = strlen(buttonArr[3].label);
-	textWrite(buttonArr[3].label, buttonArr[3].labelLength);
+//	textSetCursor(buttonArr[1].x1, buttonArr[1].y1);
+//	textTransparent(acce_color);
+//	strcpy(buttonArr[1].label ,"Enter");
+//	buttonArr[1].labelLength = strlen(buttonArr[1].label);
+//	textWrite(buttonArr[1].label, buttonArr[1].labelLength);
+//
+//	textSetCursor((buttonArr[2].x1 + 50), buttonArr[2].y1);
+//	strcpy(buttonArr[2].label ,"-");
+//	buttonArr[2].labelLength = strlen(buttonArr[2].label);
+//	textWrite(buttonArr[2].label, buttonArr[2].labelLength);
+//
+//	textSetCursor(buttonArr[3].x1, buttonArr[3].y1);
+//	strcpy(buttonArr[3].label ,"+");
+//	buttonArr[3].labelLength = strlen(buttonArr[3].label);
+//	textWrite(buttonArr[3].label, buttonArr[3].labelLength);
 
 	buttonArr[0].pressed = 0;
 	buttonArr[0].on = 1;
@@ -277,6 +496,158 @@ void guiCHECKINDraw(void) {
 	buttonArr[3].on = 1;
 
 	graphicsMode();
+}
+
+// CALENDAR Screen
+// buttons
+// buttonArr[0] = toggling seconds for time display
+// buttonArr[1] = go back to Main
+void guiCALENDARInit() {
+	buttonArr[0] = init_button(0, 0, 250, 100, "", base_color);
+	buttonArr[1] = init_button(25, 400 ,125, 75, "MAIN", acce_color);
+}
+void guiCALENDARDraw() {
+	fillScreen(base_color);
+	draw_button(&(buttonArr[1]), acce_color, base_color);
+	textMode();
+	textSetCursor(600, 10);
+	textEnlarge(2);
+	textColor(acce_color, base_color);
+	textWrite("CALENDAR", 8);
+	graphicsMode();
+
+	buttonArr[0].pressed = 0;
+	buttonArr[0].on = 1;
+	buttonArr[1].pressed = 0;
+	buttonArr[1].on = 1;
+}
+// letter = 24x50
+// ROOMMATES Screen
+// buttons
+// buttonArr[0] = toggling seconds for time display
+// buttonArr[1] = go back to Main
+void guiROOMMATESInit() {
+	buttonArr[0] = init_button(0, 0, 250, 100, "", base_color);
+	buttonArr[1] = init_button(25, 400 ,125, 75, "MAIN", acce_color);
+}
+void guiROOMMATESDraw() {
+	fillScreen(base_color);
+	draw_button(&(buttonArr[1]), acce_color, base_color);
+	textMode();
+	textSetCursor(575, 10);
+	textEnlarge(2);
+	textColor(acce_color, base_color);
+	textWrite("ROOMMATES", 9);
+
+	textSetCursor(50, 65);
+	textWrite("Roommate", 8);
+	textSetCursor(300, 65);
+	textWrite("Home", 4);
+	textSetCursor(450, 65);
+	textWrite("Away", 4);
+	textSetCursor(600, 65);
+	textWrite("Guests", 8);
+	// display roommate names
+	textSetCursor(50, 130);
+	textWrite(roommates[0].name, roommates[0].nameLength);
+	textSetCursor(50, 190);
+	textWrite(roommates[1].name, roommates[1].nameLength);
+	textSetCursor(50, 250);
+	textWrite(roommates[2].name, roommates[2].nameLength);
+	textSetCursor(50, 310);
+	textWrite(roommates[3].name, roommates[3].nameLength);
+
+	// DISPLAY ! THAT ! DATA !
+	uint16_t height = 150;
+	char numGuests[2];
+	for(int i = 0; i < MAXNUM_ROOMMATES; i++) {
+		// first place checkmark in right spot
+		if(roommates[i].home) {
+			checkmark(338, height);
+			// if home, write their number of guests
+			itoa(roommates[i].num_guests, numGuests, 10);
+			if(roommates[i].num_guests < 10) {
+				textSetCursor(660, (height - 20));
+				textWrite(numGuests, 2);
+			} else {
+				textSetCursor(645, (height - 20));
+				textWrite(numGuests, 2);
+			}
+
+		} else {
+			checkmark(485, height);
+			// if away, write no guests
+			textSetCursor(660, (height - 20));
+			textWrite("-", 1);
+		}
+		height += 58;
+	}
+
+	graphicsMode();
+
+	// make her look like a table
+	drawRect(40, 62, 775, 363, acce_color, 0); // box that surrounds entire thing
+	drawRect(40, 130, 775, 184, acce_color, 0); // box that surrounds second row
+	drawRect(40, 245, 775, 304, acce_color, 0); // box that surrounds fourth row
+	drawRect(280, 62, 420, 363, acce_color, 0); // box that surrounds second col
+	drawRect(575, 62, 775, 363, acce_color, 0); // box that surrounds fourth col
+
+
+	//checkmark(300, 225);
+
+	buttonArr[0].pressed = 0;
+	buttonArr[0].on = 1;
+	buttonArr[1].pressed = 0;
+	buttonArr[1].on = 1;
+}
+
+// LOADING screen
+// buttons
+// buttonArr[0] is void
+// buttonArr[1] = go straight to main screen without connecting to Wifi
+void guiMSGInit(char* msg) {
+	//clear screen
+	fillScreen(acce_color);
+	//initialize buttons
+//	buttonArr[0] = init_button(0, 0, 250, 100, "", base_color);
+//	buttonArr[1] = init_button(10, 350, 200, 80, "Hello", acce_color);
+	textMode();
+	textSetCursor((((800) - (24 * strlen(msg))) / 2), 200);
+	//textSetCursor(100,100);
+	textEnlarge(2);
+	textColor(base_color, acce_color);
+	textWrite(msg, strlen(msg));
+	//textWrite(msg, 10);
+	graphicsMode();
+	buttonArr[0].pressed = 0;
+	buttonArr[0].on= 0;
+	buttonArr[1].pressed = 0;
+	buttonArr[1].on= 0;
+	buttonArr[2].pressed = 0;
+	buttonArr[2].on= 0;
+	buttonArr[3].pressed = 0;
+	buttonArr[3].on= 0;
+	messaging = 1;
+	/*
+	textMode();
+	textSetCursor(600, 10);
+	textEnlarge(2);
+	textColor(0x8170, RA8875_WHITE);
+	textWrite("LOADIN'", 7);
+	//graphicsMode();
+	 *
+	 */
+}
+
+void checkmark(uint16_t start_x, uint16_t start_y) {
+	uint8_t w = 4;
+	drawRect(start_x, start_y, start_x + w, start_y + w, acce_color, 1);
+	drawRect(start_x + w, start_y + w, start_x + (2 * w), start_y + (2 * w), acce_color, 1);
+	drawRect(start_x + (2 * w), start_y + (2 * w), start_x + (3 * w), start_y + (3 * w), acce_color, 1);
+	drawRect(start_x + (3 * w), start_y + (1 * w), start_x + (4 * w), start_y + (2 * w), acce_color, 1);
+	drawRect(start_x + (4 * w), start_y + (0 * w), start_x + (5 * w), start_y + (1 * w), acce_color, 1);
+	drawRect(start_x + (5 * w), start_y + (-1 * w), start_x + (6 * w), start_y + (0 * w), acce_color, 1);
+	drawRect(start_x + (6 * w), start_y + (-2 * w), start_x + (7 * w), start_y + (-1 * w), acce_color, 1);
 }
 
 void guiState2Init(void) {
@@ -333,6 +704,13 @@ void guiStateHandler(stateType state) {
 				guiMenuState = CALENDAR;
 				// acknowledge touch interrupt
 				writeReg(RA8875_INTC2, RA8875_INTC2_TP);
+			} else if (buttonArr[3].pressed) {
+				// switch states
+				guiROOMMATESInit();
+				guiROOMMATESDraw();
+				guiMenuState = ROOMMATES;
+				// acknowledge touch interrupt
+				writeReg(RA8875_INTC2, RA8875_INTC2_TP);
 			}
 			break;
 		case CHECKIN:
@@ -342,6 +720,12 @@ void guiStateHandler(stateType state) {
 			} else if (buttonArr[0].pressed){
 				buttonArr[0].pressed = 0;
 			} else if (buttonArr[1].pressed) { //enter
+				if(found_rm != 0) {
+					temp_rm->num_guests = numberGuests;
+				}
+				found_rm = 0;
+				temp_rm = NULL;
+				numberGuests = 0;
 				guiMAINInit();
 				guiMAINDraw(); //return to the Main state for now
 				guiMenuState = MAIN;
@@ -351,7 +735,7 @@ void guiStateHandler(stateType state) {
 				textMode();
 				textEnlarge(2);
 				textColor(acce_color, base_color);
-				textSetCursor(350, 200);
+				textSetCursor(350, 215);
 				char numGuests[2];
 				itoa(numberGuests, numGuests, 10);
 				textWrite(numGuests, 2);
@@ -363,10 +747,15 @@ void guiStateHandler(stateType state) {
 				textMode();
 				textEnlarge(2);
 				textColor(acce_color, base_color);
-				textSetCursor(350, 200);
 				char numGuests[2];
 				itoa(numberGuests, numGuests, 10);
-				textWrite(numGuests, 2);
+				if(numberGuests < 10) {
+					textSetCursor(350, 215);
+					textWrite(numGuests, 2);
+				} else {
+					textSetCursor(335, 215);
+					textWrite(numGuests, 2);
+				}
 				graphicsMode();
 				buttonArr[3].pressed = 0;
 			}
@@ -374,6 +763,32 @@ void guiStateHandler(stateType state) {
 			writeReg(RA8875_INTC2, RA8875_INTC2_TP);
 			card_scanned = 0;
 			break;
+		case CALENDAR:
+			if(buttonArr[0].pressed) {
+				buttonArr[0].pressed = 0;
+			} else if (buttonArr[1].pressed) {
+				guiMAINInit();
+				guiMAINDraw(); //return to the Main state for now
+				guiMenuState = MAIN;
+			}
+			writeReg(RA8875_INTC2, RA8875_INTC2_TP);
+			break;
+		case ROOMMATES:
+			if(buttonArr[0].pressed) {
+				buttonArr[0].pressed = 0;
+			} else if (buttonArr[1].pressed) {
+				guiMAINInit();
+				guiMAINDraw(); //return to the Main state for now
+				guiMenuState = MAIN;
+			}
+			writeReg(RA8875_INTC2, RA8875_INTC2_TP);
+			break;
+		case MSG:
+			if(messaging == 0) {
+				guiMAINInit();
+				guiMAINDraw(); //return to the Main state for now
+				guiMenuState = MAIN;
+			}
 	}
 
 	//if the color has been updated from the keypad, then redraw the gui and
