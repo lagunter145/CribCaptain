@@ -19,6 +19,10 @@ Roommate initRoommate(char* name, char* uid_str) {
 	}
 	rm.home = 0;
 	strcpy(rm.uid_str, uid_str);
+	rm.chores[0] = "Dishes";
+	rm.chores[1] = "Vacuum";
+	rm.events[0] = "Exam";
+	rm.events[1] = "Parents";
 	return rm;
 }
 

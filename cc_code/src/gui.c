@@ -29,6 +29,7 @@ volatile uint8_t piccing = 0;
 
 extern Roommate roommates[MAXNUM_ROOMMATES];
 
+
 char* ways_to_say_goodbye[] = {"Look_after yourself!",
 							"Live long and prosper",
 							"Bye bye, cute munchkin",
@@ -58,10 +59,13 @@ char* intruder_msg[] = {	"Are you sure you live here?",
 						"No trespassing",
 						"Releasing army of rats",
 						"Mmm, I don't know you ",
-						"Not on the list, bucko"
+						"Not on the list, bucko",
+						"Eat Rocks <3"
 };
+
+
 int ways_to_say_goodbye_size = 16;
-int intruder_msg_size = 13;
+int intruder_msg_size = 14;
 
 void draw_button(struct Button *but, uint16_t button_color, uint16_t text_color) {
 	//old mode
@@ -92,7 +96,25 @@ void draw_button(struct Button *but, uint16_t button_color, uint16_t text_color)
 	graphicsMode();
 
 }
+void draw_sel_button(int mode, uint16_t button_color, uint16_t text_color) {
+	//Need to draw the rectangle first
+	Button *but = &buttonArr[mode];
+	graphicsMode();
+	drawRect(but->x1, but->y1, but->x2, but->y2, text_color, 1);
+	drawRect(but->x1, but->y1, but->x2, but->y2, button_color, 0);
 
+	//Then draw the text
+	textMode();
+	textEnlarge(2);
+	// center text in button rect
+	uint16_t start_x = (((but->x2 - but->x1) - (24 * but->labelLength)) / 2) + but->x1;
+	uint16_t start_y = (((but->y2 - but->y1) - (50)) / 2) + but->y1;
+	textSetCursor(start_x, start_y);
+	textColor(button_color, text_color);
+	textWrite(but->label, but->labelLength);
+	graphicsMode();
+
+}
 Button init_button(int x, int y, int w, int h, char* label, uint16_t color){
     Button but;
     but.on = 0;
@@ -116,8 +138,29 @@ Button init_button(int x, int y, int w, int h, char* label, uint16_t color){
 
     return but;
 }
+Button init_small_button(int x, int y, int w, int h, char* label, int labelLength, uint16_t color) {
+    Button but;
+    but.on = 0;
+    but.x1 = x;
+    but.x2 = x+w;
+    but.y1 = y;
+    but.y2 = y+h;
+	strcpy(but.label, label);
+	but.labelLength = labelLength;
+    but.pressed = 0;
+    but.color = color;
+    //drawRect(x, y, x+w, y+h, color, 1);
+    /*
+    textMode();
+	textSetCursor(x, y);
+	textEnlarge(2);
+	textTransparent(0x8170);
+	textWrite(but.label, but.labelLength);
+	graphicsMode();
+    */
 
-
+    return but;
+}
 int check_pressed(Button but, int x, int y) {
     if (but.x1 < x && x < but.x2 && but.y1 < y && y < but.y2){
         return 1;
@@ -145,6 +188,7 @@ void guiLOADINGInit(void) {
 	//clear screen
 	fillScreen(base_color);
 	//bmpDraw("cc_icon.bmp", 200, 200);
+	//drawPic(200, 200);
 	//initialize buttons
 	buttonArr[0] = init_button(0, 0, 250, 100, "", base_color);
 	buttonArr[1] = init_button(10, 350, 200, 80, "Hello", acce_color);
@@ -190,7 +234,6 @@ void guiLOADINGDraw(void) {
 }
 int pic_size = 50;
 int pix_w = 3;
-
 void drawPic(int start_x, int start_y) {
 	piccing = 1;
 	graphicsMode();
@@ -210,7 +253,6 @@ void drawPic(int start_x, int start_y) {
 	}
 	piccing = 0;
 }
-
 #define BUFFPIXEL 5
 void bmpDraw(char* filename, int start_x, int start_y) {
 	FILE*     bmpFile;
@@ -326,12 +368,9 @@ void bmpDraw(char* filename, int start_x, int start_y) {
 
 	close(bmpFile);
 }
-
 uint16_t color565(uint8_t r, uint8_t g, uint8_t b) {
   return ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3);
 }
-
-
 
 
 // MAIN screen
@@ -411,7 +450,6 @@ void guiCHECKINInit(void) {
 	buttonArr[2] = init_button(250, 200, 70, 80, "-", acce_color);
 	buttonArr[3] = init_button(400, 200, 70, 80, "+", acce_color);
 }
-
 int srand_set = 0;
 void guiCHECKINDraw(void) {
 	if(!srand_set) {
@@ -502,27 +540,62 @@ void guiCHECKINDraw(void) {
 // buttons
 // buttonArr[0] = toggling seconds for time display
 // buttonArr[1] = go back to Main
+// buttonArr[2] = show all events and chores
+// buttonArr[3] = show roommate 1 events and chores
+// buttonArr[4] = show roommate 2 events and chores
+// buttonArr[5] = show roommate 3 events and chores
+// buttonArr[6] = show roommate 4 events and chores
 void guiCALENDARInit() {
 	buttonArr[0] = init_button(0, 0, 250, 100, "", base_color);
-	buttonArr[1] = init_button(25, 400 ,125, 75, "MAIN", acce_color);
-}
-void guiCALENDARDraw() {
-	fillScreen(base_color);
-	draw_button(&(buttonArr[1]), acce_color, base_color);
-	textMode();
-	textSetCursor(600, 10);
-	textEnlarge(2);
-	textColor(acce_color, base_color);
-	textWrite("CALENDAR", 8);
-	graphicsMode();
+	buttonArr[1] = init_button(25, 400, 125, 75, "MAIN", acce_color);
+	buttonArr[2] = init_small_button(200, 400, 100, 75, "ALL", 3, acce_color);
+	buttonArr[3] = init_small_button(325, 400, 100, 75, roommates[0].name, 3, acce_color);
+	buttonArr[4] = init_small_button(450, 400, 100, 75, roommates[1].name, 3, acce_color);
+	buttonArr[5] = init_small_button(575, 400, 100, 75, roommates[2].name, 3, acce_color);
+	buttonArr[6] = init_small_button(700, 400, 100, 75, roommates[3].name, 3, acce_color);
 
 	buttonArr[0].pressed = 0;
 	buttonArr[0].on = 1;
 	buttonArr[1].pressed = 0;
 	buttonArr[1].on = 1;
+	buttonArr[2].pressed = 0;
+	buttonArr[2].on = 1;
+	buttonArr[3].pressed = 0;
+	buttonArr[3].on = 1;
+	buttonArr[4].pressed = 0;
+	buttonArr[4].on = 1;
+	buttonArr[5].pressed = 0;
+	buttonArr[5].on = 1;
+	buttonArr[6].pressed = 0;
+	buttonArr[6].on = 1;
 }
-// letter = 24x50
+int old_mode = 0;
+void guiCALENDARDraw(int mode, int redraw) {
+	if(redraw) {
+		fillScreen(base_color);
+		for(int i = 1; i < 7; i++) {
+			if(i != mode) {
+				draw_button(&buttonArr[i], acce_color, base_color);
+			}
+		}
+		draw_sel_button(mode, acce_color, base_color);
+		textMode();
+		textSetCursor(600, 10);
+		textEnlarge(2);
+		textColor(acce_color, base_color);
+		textWrite("CALENDAR", 8);
+		graphicsMode();
+	}
+	if(old_mode != mode) {
+		draw_button(&buttonArr[old_mode], acce_color, base_color);
+		draw_sel_button(mode, acce_color, base_color);
+	}
+
+	old_mode = mode;
+}
+
 // ROOMMATES Screen
+// letter = 24x50
 // buttons
 // buttonArr[0] = toggling seconds for time display
 // buttonArr[1] = go back to Main
@@ -600,11 +673,19 @@ void guiROOMMATESDraw() {
 	buttonArr[1].pressed = 0;
 	buttonArr[1].on = 1;
 }
+void checkmark(uint16_t start_x, uint16_t start_y) {
+	uint8_t w = 4;
+	drawRect(start_x, start_y, start_x + w, start_y + w, acce_color, 1);
+	drawRect(start_x + w, start_y + w, start_x + (2 * w), start_y + (2 * w), acce_color, 1);
+	drawRect(start_x + (2 * w), start_y + (2 * w), start_x + (3 * w), start_y + (3 * w), acce_color, 1);
+	drawRect(start_x + (3 * w), start_y + (1 * w), start_x + (4 * w), start_y + (2 * w), acce_color, 1);
+	drawRect(start_x + (4 * w), start_y + (0 * w), start_x + (5 * w), start_y + (1 * w), acce_color, 1);
+	drawRect(start_x + (5 * w), start_y + (-1 * w), start_x + (6 * w), start_y + (0 * w), acce_color, 1);
+	drawRect(start_x + (6 * w), start_y + (-2 * w), start_x + (7 * w), start_y + (-1 * w), acce_color, 1);
+}
 
-// LOADING screen
+// MSG screen
 // buttons
-// buttonArr[0] is void
-// buttonArr[1] = go straight to main screen without connecting to Wifi
 void guiMSGInit(char* msg) {
 	//clear screen
 	fillScreen(acce_color);
@@ -639,17 +720,6 @@ void guiMSGInit(char* msg) {
 	 */
 }
 
-void checkmark(uint16_t start_x, uint16_t start_y) {
-	uint8_t w = 4;
-	drawRect(start_x, start_y, start_x + w, start_y + w, acce_color, 1);
-	drawRect(start_x + w, start_y + w, start_x + (2 * w), start_y + (2 * w), acce_color, 1);
-	drawRect(start_x + (2 * w), start_y + (2 * w), start_x + (3 * w), start_y + (3 * w), acce_color, 1);
-	drawRect(start_x + (3 * w), start_y + (1 * w), start_x + (4 * w), start_y + (2 * w), acce_color, 1);
-	drawRect(start_x + (4 * w), start_y + (0 * w), start_x + (5 * w), start_y + (1 * w), acce_color, 1);
-	drawRect(start_x + (5 * w), start_y + (-1 * w), start_x + (6 * w), start_y + (0 * w), acce_color, 1);
-	drawRect(start_x + (6 * w), start_y + (-2 * w), start_x + (7 * w), start_y + (-1 * w), acce_color, 1);
-}
-
 void guiState2Init(void) {
 	// clear screen
 }
@@ -665,6 +735,13 @@ void guiRedraw() {
 			break;
 		case CHECKIN:
 			guiCHECKINDraw();
+			break;
+		case CALENDAR:
+			guiCALENDARDraw(2, 1);
+			break;
+		case ROOMMATES:
+			guiROOMMATESDraw();
+			break;
 }
 	// acknowledge touch interrupt
 	writeReg(RA8875_INTC2, RA8875_INTC2_TP);
@@ -699,8 +776,9 @@ void guiStateHandler(stateType state) {
 				writeReg(RA8875_INTC2, RA8875_INTC2_TP);
 			} else if (buttonArr[2].pressed) {
 				// switch states
+				old_mode = 2;
 				guiCALENDARInit();
-				guiCALENDARDraw();
+				guiCALENDARDraw(2, 1);
 				guiMenuState = CALENDAR;
 				// acknowledge touch interrupt
 				writeReg(RA8875_INTC2, RA8875_INTC2_TP);
@@ -770,6 +848,16 @@ void guiStateHandler(stateType state) {
 				guiMAINInit();
 				guiMAINDraw(); //return to the Main state for now
 				guiMenuState = MAIN;
+			} else if (buttonArr[2].pressed) {
+				guiCALENDARDraw(2, 0);
+			} else if (buttonArr[3].pressed) {
+				guiCALENDARDraw(3, 0);
+			} else if (buttonArr[4].pressed) {
+				guiCALENDARDraw(4, 0);
+			} else if (buttonArr[5].pressed) {
+				guiCALENDARDraw(5, 0);
+			} else if (buttonArr[6].pressed) {
+				guiCALENDARDraw(6, 0);
 			}
 			writeReg(RA8875_INTC2, RA8875_INTC2_TP);
 			break;
@@ -859,10 +947,12 @@ uint8_t buttonHandler(int xc, int yc) {
 			buttonArr[1].pressed = check_pressed(buttonArr[1], xc, yc);
 			if(buttonArr[1].pressed) {
 				state_flag = 1;
+				return 1;
 			}
 		}
 		else {
 			state_flag = 1;
+			return 1;
 		}
 	}
 	if (buttonArr[2].on) {
@@ -870,10 +960,12 @@ uint8_t buttonHandler(int xc, int yc) {
 			buttonArr[2].pressed = check_pressed(buttonArr[2], xc, yc);
 			if(buttonArr[2].pressed) {
 				state_flag = 1;
+				return 1;
 			}
 		}
 		else {
 			state_flag = 1;
+			return 1;
 		}
 	}
 	if (buttonArr[3].on) {
@@ -881,10 +973,51 @@ uint8_t buttonHandler(int xc, int yc) {
 			buttonArr[3].pressed = check_pressed(buttonArr[3], xc, yc);
 			if(buttonArr[3].pressed) {
 				state_flag = 1;
+				return 1;
 			}
 		}
 		else {
 			state_flag = 1;
+			return 1;
+		}
+	}
+	if (buttonArr[4].on) {
+		if (buttonArr[4].pressed == 0) {
+			buttonArr[4].pressed = check_pressed(buttonArr[4], xc, yc);
+			if(buttonArr[4].pressed) {
+				state_flag = 1;
+				return 1;
+			}
+		}
+		else {
+			state_flag = 1;
+			return 1;
+		}
+	}
+	if (buttonArr[5].on) {
+		if (buttonArr[5].pressed == 0) {
+			buttonArr[5].pressed = check_pressed(buttonArr[5], xc, yc);
+			if(buttonArr[5].pressed) {
+				state_flag = 1;
+				return 1;
+			}
+		}
+		else {
+			state_flag = 1;
+			return 1;
+		}
+	}
+	if (buttonArr[6].on) {
+		if (buttonArr[6].pressed == 0) {
+			buttonArr[6].pressed = check_pressed(buttonArr[6], xc, yc);
+			if(buttonArr[6].pressed) {
+				state_flag = 1;
+				return 1;
+			}
+		}
+		else {
+			state_flag = 1;
+			return 1;
 		}
 	}
 	if (state_flag) {
@@ -893,6 +1026,7 @@ uint8_t buttonHandler(int xc, int yc) {
 	//writeReg(RA8875_INTC2, RA8875_INTC2_TP);
 	return 0;
 }
+
 
 
 

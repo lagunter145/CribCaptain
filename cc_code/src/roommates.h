@@ -21,6 +21,9 @@ typedef struct Roommate{
     uint8_t num_guests;
     // linked list of events
     // queue for chores
+    // dummy holder for events and chores to test gui
+    char* events[2];
+    char* chores[2];
 } Roommate;
 
 Roommate initRoommate(char* name, char* uid_str);

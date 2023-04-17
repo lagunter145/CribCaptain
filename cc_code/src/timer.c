@@ -18,6 +18,9 @@
 extern uint16_t base_color;
 extern uint16_t acce_color;
 extern uint8_t show_sec;
+extern char wifiConnected;
+extern char timeAcquired;
+
 volatile int tim6semaphore = 0; //0 for wifi setup, 1 for http get request
 extern volatile uint8_t messaging;
 
@@ -248,8 +251,17 @@ void EXTI4_15_IRQHandler(void) {
 
 				}
 
+				if (guiMenuState == LOADING && timeAcquired) {
+					//wifi is connected
+					guiMenuState = MAIN;
+					guiMAINInit();
+					guiMAINDraw();
+					writeReg(RA8875_INTC2, RA8875_INTC2_TP);
+
+				}
 
 				guiStateHandler(guiMenuState);
+
 				if ((guiMenuState == LOADING) && (!piccing)) {
 					//write loading to the screen
 					write_loading();
@@ -346,8 +358,6 @@ void TIM6_DAC_IRQHandler(void) {
 		if (wifiHTTPState == 2) {
 			http_getrequest(url, 2);
 			wifiHTTPState++;
-			guiMenuState = MAIN;
-			guiMAINDraw();
 		}
 
 	}

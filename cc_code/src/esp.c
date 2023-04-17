@@ -205,7 +205,26 @@ void http_getrequest(char * uri, int requestState) {
 
 
 
-void wifi_parseresponse(char * http) {
+
+
+
+volatile char wifi_readbuff[10] = "";
+volatile char wifi_response[800];
+volatile char responseStateIPD = 0;
+volatile char responseStateOK = 0;
+volatile char responseStateDisconnect = 0;
+volatile char responseStateConnect = 0;
+volatile char wifiConnected = 0;
+volatile int responseBytesToGo = 0;
+volatile int responseBytesTotal = 0;
+volatile char timeAcquired = 0;
+
+void wifi_clearreadbuff(void) {
+	for (int i = 10; i > 0; i--)
+		wifi_readbuff[i] = '\0';
+}
+
+void wifi_parseresponse(volatile char * http) {
 	/*//worldclockapi.com
 	char *response = strstr(http, "\r\n\r\n")+4;
 	char *datetime = strstr(response, "\"currentDateTime\":")+18;
@@ -231,20 +250,7 @@ void wifi_parseresponse(char * http) {
 	minute = atoi(&time[3]);
 	second = atoi(&time[6]);
 
-}
-
-
-volatile char wifi_readbuff[10] = "";
-volatile char wifi_response[800];
-volatile char responseStateIPD = 0;
-volatile char responseStateOK = 0;
-volatile char responseStateDisconnect = 0;
-volatile int responseBytesToGo = 0;
-volatile int responseBytesTotal = 0;
-
-void wifi_clearreadbuff(void) {
-	for (int i = 10; i > 0; i--)
-		wifi_readbuff[i] = '\0';
+	timeAcquired = 1;
 }
 
 void USART1_IRQHandler(void) {
@@ -312,106 +318,159 @@ void USART1_IRQHandler(void) {
 		}
 
 		switch(responseStateOK) {
-					case 0 : if (rxByte == '\r' || rxByte == '\n')responseStateOK++;
-						else {responseStateOK = 0;}
-						break;
-					case 1 : if (rxByte == '\r' || rxByte == '\n')responseStateOK++;
-						else {responseStateOK = 0;}
-						break;
-					case 2 : if (rxByte == 'O')responseStateOK++;
-						else if (rxByte == '\r' || rxByte == '\n')responseStateOK=2;
-						else {responseStateOK = 0;}
-						break;
-					case 3 : if (rxByte == 'K')responseStateOK++;
-						else {responseStateOK = 0;}
-						break;
-					case 4 : if (rxByte == '\r' || rxByte == '\n')responseStateOK++;
-						else {responseStateOK = 0;}
-						break;
-					case 5 : if (rxByte == '\r' || rxByte == '\n')responseStateOK++;
-						else {responseStateOK = 0;}
-						//recognized that an OK has been received
+			case 0 : if (rxByte == '\r' || rxByte == '\n')responseStateOK++;
+				else {responseStateOK = 0;}
+				break;
+			case 1 : if (rxByte == '\r' || rxByte == '\n')responseStateOK++;
+				else {responseStateOK = 0;}
+				break;
+			case 2 : if (rxByte == 'O')responseStateOK++;
+				else if (rxByte == '\r' || rxByte == '\n')responseStateOK=2;
+				else {responseStateOK = 0;}
+				break;
+			case 3 : if (rxByte == 'K')responseStateOK++;
+				else {responseStateOK = 0;}
+				break;
+			case 4 : if (rxByte == '\r' || rxByte == '\n')responseStateOK++;
+				else {responseStateOK = 0;}
+				break;
+			case 5 : if (rxByte == '\r' || rxByte == '\n')responseStateOK++;
+				else {responseStateOK = 0;}
+				//recognized that an OK has been received
 
-						//if wifi is in initialization state, then increment the wifi initial state
-						//and trigger the timer 6 interrupt
-						if (tim6semaphore == 0) {
-							wifiInitialState++;
-							tim6_triggerInterrupt();
-						}
-						//if wifi is in initialization state, then increment the wifi http state
-						//and trigger the timer 6 interrupt
-						if (tim6semaphore == 1) {
-							wifiHTTPState++;
-							tim6_triggerInterrupt();
-						}
-						//reset the response state variable
-						responseStateOK = 0;
-						break;
+				//if wifi is in initialization state, then increment the wifi initial state
+				//and trigger the timer 6 interrupt
+				if (tim6semaphore == 0) {
+					wifiInitialState++;
+					tim6_triggerInterrupt();
+				}
+				//if wifi is in initialization state, then increment the wifi http state
+				//and trigger the timer 6 interrupt
+				if (tim6semaphore == 1) {
+					wifiHTTPState++;
+					tim6_triggerInterrupt();
+				}
+				//reset the response state variable
+				responseStateOK = 0;
+				break;
+
 			default: responseStateOK = 0;
 		}
 
 		switch(responseStateDisconnect) {
-					case 0 : if (rxByte == 'W')responseStateDisconnect++;
-						else {responseStateDisconnect = 0;}
-						break;
-					case 1 : if (rxByte == 'I')responseStateDisconnect++;
-						else {responseStateDisconnect = 0;}
-						break;
-					case 2 : if (rxByte == 'F')responseStateDisconnect++;
-						else {responseStateDisconnect = 0;}
-						break;
-					case 3 : if (rxByte == 'I')responseStateDisconnect++;
-						else {responseStateDisconnect = 0;}
-						break;
-					case 4 : if (rxByte == ' ')responseStateDisconnect++;
-						else {responseStateDisconnect = 0;}
-						break;
-					case 5 : if (rxByte == 'D')responseStateDisconnect++;
-						else {responseStateDisconnect = 0;}
-						break;
-					case 6 : if (rxByte == 'I')responseStateDisconnect++;
-						else {responseStateDisconnect = 0;}
-						break;
-					case 7 : if (rxByte == 'S')responseStateDisconnect++;
-						else {responseStateDisconnect = 0;}
-						break;
-					case 8 : if (rxByte == 'C')responseStateDisconnect++;
-						else {responseStateDisconnect = 0;}
-						break;
-					case 9 : if (rxByte == 'O')responseStateDisconnect++;
-						else {responseStateDisconnect = 0;}
-						break;
-					case 10 : if (rxByte == 'N')responseStateDisconnect++;
-						else {responseStateDisconnect = 0;}
-						break;
-					case 11 : if (rxByte == 'N')responseStateDisconnect++;
-						else {responseStateDisconnect = 0;}
-						break;
-					case 12 : if (rxByte == 'E')responseStateDisconnect++;
-						else {responseStateDisconnect = 0;}
-						break;
-					case 13 : if (rxByte == 'C')responseStateDisconnect++;
-						else {responseStateDisconnect = 0;}
-						break;
-					case 14 : if (rxByte == 'T')responseStateDisconnect++;
-						else {responseStateDisconnect = 0;}
-						//WIFI DISCONNECT is read. Must reconnect to the wifi if the timer 6 semaphore is not 0
-						if (tim6semaphore != 0) {
-							//reset the http state
-							wifiHTTPState = 0;
-							//reset the timer semaphore
-							tim6semaphore = 0;
-							//reset the wifi intial state to redo the connection
-							wifiInitialState = 2;
-
-						}
-						responseStateDisconnect = 0;
-
-						break;
-
-
+			case 0 : if (rxByte == 'W')responseStateDisconnect++;
+				else {responseStateDisconnect = 0;}
+				break;
+			case 1 : if (rxByte == 'I')responseStateDisconnect++;
+				else {responseStateDisconnect = 0;}
+				break;
+			case 2 : if (rxByte == 'F')responseStateDisconnect++;
+				else {responseStateDisconnect = 0;}
+				break;
+			case 3 : if (rxByte == 'I')responseStateDisconnect++;
+				else {responseStateDisconnect = 0;}
+				break;
+			case 4 : if (rxByte == ' ')responseStateDisconnect++;
+				else {responseStateDisconnect = 0;}
+				break;
+			case 5 : if (rxByte == 'D')responseStateDisconnect++;
+				else {responseStateDisconnect = 0;}
+				break;
+			case 6 : if (rxByte == 'I')responseStateDisconnect++;
+				else {responseStateDisconnect = 0;}
+				break;
+			case 7 : if (rxByte == 'S')responseStateDisconnect++;
+				else {responseStateDisconnect = 0;}
+				break;
+			case 8 : if (rxByte == 'C')responseStateDisconnect++;
+				else {responseStateDisconnect = 0;}
+				break;
+			case 9 : if (rxByte == 'O')responseStateDisconnect++;
+				else {responseStateDisconnect = 0;}
+				break;
+			case 10 : if (rxByte == 'N')responseStateDisconnect++;
+				else {responseStateDisconnect = 0;}
+				break;
+			case 11 : if (rxByte == 'N')responseStateDisconnect++;
+				else {responseStateDisconnect = 0;}
+				break;
+			case 12 : if (rxByte == 'E')responseStateDisconnect++;
+				else {responseStateDisconnect = 0;}
+				break;
+			case 13 : if (rxByte == 'C')responseStateDisconnect++;
+				else {responseStateDisconnect = 0;}
+				break;
+			case 14 : if (rxByte == 'T')responseStateDisconnect++;
+				else {responseStateDisconnect = 0;}
+				//WIFI DISCONNECT is read. Must reconnect to the wifi if the timer 6 semaphore is not 0
+				wifiConnected = 0; //wifi is not connected
+				if (tim6semaphore != 0) {
+					//reset the http state
+					wifiHTTPState = 0;
+					//reset the timer semaphore
+					tim6semaphore = 0;
+					//reset the wifi intial state to redo the connection
+					wifiInitialState = 2;
+				}
+				responseStateDisconnect = 0;
+				break;
 			default: responseStateDisconnect = 0;
 		}
+
+
+		switch(responseStateConnect) {
+			case 0 : if (rxByte == 'W')responseStateConnect++;
+				else {responseStateConnect = 0;}
+				break;
+			case 1 : if (rxByte == 'I')responseStateConnect++;
+				else {responseStateConnect = 0;}
+				break;
+			case 2 : if (rxByte == 'F')responseStateConnect++;
+				else {responseStateConnect = 0;}
+				break;
+			case 3 : if (rxByte == 'I')responseStateConnect++;
+				else {responseStateConnect = 0;}
+				break;
+			case 4 : if (rxByte == ' ')responseStateConnect++;
+				else {responseStateConnect = 0;}
+				break;
+			case 5 : if (rxByte == 'C')responseStateConnect++;
+				else {responseStateConnect = 0;}
+				break;
+			case 6 : if (rxByte == 'O')responseStateConnect++;
+				else {responseStateConnect = 0;}
+				break;
+			case 7 : if (rxByte == 'N')responseStateConnect++;
+				else {responseStateConnect = 0;}
+				break;
+			case 8 : if (rxByte == 'N')responseStateConnect++;
+				else {responseStateConnect = 0;}
+				break;
+			case 9 : if (rxByte == 'E')responseStateConnect++;
+				else {responseStateConnect = 0;}
+				break;
+			case 10 : if (rxByte == 'C')responseStateConnect++;
+				else {responseStateConnect = 0;}
+				break;
+			case 11 : if (rxByte == 'T')responseStateConnect++;
+				else {responseStateConnect = 0;}
+				break;
+			case 12 : if (rxByte == 'E')responseStateConnect++;
+				else {responseStateConnect = 0;}
+				break;
+			case 13 : if (rxByte == 'D')responseStateConnect++;
+				else {responseStateConnect = 0;}
+				//WIFI CONNECT is read. Update Wifi Connected state variable
+				wifiConnected = 1;
+
+				responseStateConnect = 0;
+
+				break;
+
+
+			default: responseStateConnect = 0;
+		}
+
 	}
 
 }

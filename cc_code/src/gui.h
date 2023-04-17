@@ -43,6 +43,7 @@ Button buttonArr[NUM_BUT];
 
 
 Button init_button(int x, int y, int w, int h, char* label, uint16_t color);
+Button init_small_button(int x, int y, int w, int h, char* label, int labelLength, uint16_t color);
 int check_pressed(Button but, int x, int y);
 void update_button(Button but, int x, int y, int w, int h, char*label, uint16_t color);
 void guiStateHandler(uint8_t state);
@@ -54,8 +55,9 @@ void drawPic(int start_x, int start_y);
 void bmpDraw(char* filename, int start_x, int start_y);
 uint16_t color565(uint8_t r, uint8_t g, uint8_t b);
 void guiCHECKINInit();
+void substring(char* source, char* dest, int s, int e);
 void guiCALENDARInit();
-void guiCALENDARDraw();
+void guiCALENDARDraw(int mode, int redraw);
 void guiROOMMATESInit();
 void guiROOMMATESDraw();
 void checkmark(uint16_t start_x, uint16_t start_y);
