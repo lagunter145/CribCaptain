@@ -7,8 +7,6 @@
 
 #include "chores.h"
 
-extern Roommate roommates[];
-
 Chore init_Chore(char* name) {
 	Chore temp;
 	strcpy(temp.name, name);

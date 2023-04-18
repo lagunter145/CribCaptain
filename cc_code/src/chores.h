@@ -13,6 +13,8 @@
 
 #include "Node_LL.h"
 
+extern Roommate roommates[];
+
 typedef struct Chore{
     char name[15];
     uint8_t nameLength;

@@ -8,6 +8,16 @@
 #ifndef ESP_H_
 #define ESP_H_
 
+char readBuffer[10];
+
+extern volatile int minute;
+extern volatile int hour;
+extern volatile int second;
+
+extern volatile int wifiHTTPState;
+extern volatile int wifiInitialState;
+extern volatile int tim6semaphore;
+
 void setup_uart1();
 uint8_t wifi_sendchar(uint8_t txChar);
 uint8_t wifi_getchar(void);

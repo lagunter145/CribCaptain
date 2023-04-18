@@ -5,26 +5,30 @@
  *      Author: phili
  */
 
+#include <String.h>
 #include "stm32f0xx.h"
 #include "rfid.h"
-#include "RA8775_commands.h"
+#include "stdlib.h"
 #include "lcd_7in.h"
 #include "gui.h"
 
-uint8_t rfid_tag[20];
-char uid_str[10];
-uint32_t uid;
-extern stateType guiMenuState;
+
+// local global variables
+uint8_t pn532_packetbuffer[64];	// buffer to hold values to send/receive to/from the PN532
+volatile uint8_t command;				// byte that holds command for writing to PN532
+volatile uint8_t rfid_tag[20];	// buffer to read in RFID tag info
+
+volatile uint8_t card_scanned;	// flag for indicating a card has been scanned
+char uid_str[10];				// string containing last scanned RFID UID
+volatile uint32_t uid;
 
 // USART5 was used from 362 Lab 10. I just copied over the initiation and
 // basic read/write functions.
-// According to the STM32F0 Reference Manual, USART5/6/7/8 are missing a
-// lot of features (don't know if we actually need). USART1/2 are fully featured.
-// USART1_TX: PA9 AF1, PB6 AF0
-// USART1_RX: PA10 AF1, PB7 AF0
-
-//*****      TO DO:      *****//
-//***** CHANGE TO USART1 *****//
+// overrun error (ORE bit) can occur if the RXNE flag is set when the next data is received.
+    // interrupt only sent if RXNEIE or EIE bit is set
+// framing error (FE bit) can occur if stop bit not recognized
+    // no interrupt is generated for single byte comm.
+    // if EIE bit set in CR3 and multibuffer comm, then interrupt is sent
 void init_usart5()
 {
     // enable RCC clock to GPIOC and GPIOD
@@ -54,14 +58,11 @@ void init_usart5()
     //DMA 1 Channel 1 Setup
 	//enable DMA clock
 	RCC->AHBENR |= RCC_AHBENR_DMA1EN;
-	//enable DMA transfer and reception on USART5
-	//USART5->CR3 |= USART_CR3_DMAT | USART_CR3_DMAR;
 	//set the peripheral register address in the DMA_CPARx register
 	DMA1_Channel1->CPAR = (uint32_t) (&(USART5->RDR));
 	//set the memory address in the DMA_CMARx
 	DMA1_Channel1->CMAR = (uint32_t) (&rfid_tag[0]);
 	//set the total size of the RFID string
-	//changed it to 1 just for testing purposes (Matt)
 	DMA1_Channel1->CNDTR = 19;
 
 	//enable DMA interrupts
@@ -100,7 +101,7 @@ void DMA1_CH1_IRQHandler(void) {
 		//clears the interrupt for the full transfer
 		DMA1->IFCR |= DMA_IFCR_CTCIF1;
 
-		// rfid_tag[] first 7? bytes will be preambles and checksums
+		// rfid_tag[] first 7 bytes will be preambles and checksums
 
 		/* ISO14443A card response should be in the following format:
           byte            Description
@@ -113,58 +114,40 @@ void DMA1_CH1_IRQHandler(void) {
           b13..NFCIDLen   NFCID
         */
 
-		//uint8_t a =  rfid_tag[0];
-
 		uint16_t sens_res = rfid_tag[9];
         sens_res <<= 8;
         sens_res |= rfid_tag[10];
 
-        //*uidLength = pn532_packetbuffer[5];
+        // extract UID from the buffer
         uid = 0;
         for (uint8_t i = 0; i < rfid_tag[12]; i++) {
             uid |= rfid_tag[13 + i] << (8 * i);
         }
         itoa(uid,(&uid_str[0]), 16);
-//        textMode();
-//		textSetCursor(100, 350);
-//		textEnlarge(2);
-//		textColor(0x8170, RA8875_WHITE);
-//		textWrite(uid_str, rfid_tag[12] * 2);
-//		graphicsMode();
 
+        // turn off DMA to reconfigure it
 		DMA1_Channel1->CCR &= ~DMA_CCR_EN;
 		USART5->CR3 &= ~(USART_CR3_DMAT | USART_CR3_DMAR);
 		readPassiveTargetID(PN532_MIFARE_ISO14443A, NULL, NULL, 0);
 		USART5->CR3 |= USART_CR3_DMAT | USART_CR3_DMAR;
 		DMA1_Channel1->CNDTR = 19;
-	    DMA1_Channel1->CCR |= DMA_CCR_EN;
-	    if(guiMenuState == MSG) {
+	    // turn DMA back on
+		DMA1_Channel1->CCR |= DMA_CCR_EN;
+	    // set the GUI
+		if(guiMenuState == MSG) {
 	    	guiMenuState = MSG;
 	    } else if(guiMenuState != CHECKIN) {
 	    	card_scanned = 1;
 	    	guiMenuState = CHECKIN;
 	    }
-
 	}
 }
 
 
-
-
-// is multibuffer communication needed? If so, must also enable DMA
-
-// overrun error (ORE bit) can occur if the RXNE flag is set when the next data is received.
-    // interrupt only sent if RXNEIE or EIE bit is set
-// framing error (FE bit) can occur if stop bit not recognized
-    // no interrupt is generated for single byte comm.
-    // if EIE bit set in CR3 and multibuffer comm, then interrupt is sent
-
 // basic function to write a byte to the TDR register
-void write_byte(uint8_t c)
-{
+void write_byte(uint8_t c) {
     // wait for TXE bit to be set
     while (!(USART5->ISR & USART_ISR_TXE)) {}
-
     USART5->TDR = c;
 }
 // pg 687: "8. After writing the last data into the USARTx_TDR register, wait
@@ -173,12 +156,10 @@ void write_byte(uint8_t c)
 // mode to avoid corrupting last transmission.
 
 // basic function to read a byte from the RDR register
-uint8_t read_byte(void)
-{
+uint8_t read_byte(void) {
     // wait for RXNE bit to be set
     while (!(USART5->ISR & USART_ISR_RXNE)) {}
     uint8_t c = USART5->RDR;
-
     return c;
 }
 
@@ -188,8 +169,7 @@ uint8_t read_byte(void)
  * https://github.com/elechouse/PN532/blob/PN532_HSU/PN532/PN532.cpp
 ***************************************************************************/
 
-void wakeup()
-{
+void wakeup() {
     write_byte(0x55);
     write_byte(0x55);
     write_byte(0);
@@ -205,8 +185,7 @@ void wakeup()
     @retval number of received bytes, 0 means no data received.
 */
 // pass timeout=0 to avoid timeout checks
-int8_t receive(uint8_t *buf, int len, uint16_t timeout)
-{
+int8_t receive(uint8_t *buf, int len, uint16_t timeout) {
   int read_bytes = 0;
   uint8_t ret;
 
@@ -231,8 +210,7 @@ int8_t receive(uint8_t *buf, int len, uint16_t timeout)
   return read_bytes;
 }
 
-int8_t readAckFrame()
-{
+int8_t readAckFrame() {
     const uint8_t PN532_ACK[] = {0, 0, 0xFF, 0, 0xFF, 0};
     uint8_t ackBuf[6];
 
@@ -246,9 +224,7 @@ int8_t readAckFrame()
     return 0;
 }
 
-int8_t writeCommand(const uint8_t *header, uint8_t hlen, const uint8_t *body, uint8_t blen)
-{
-
+int8_t writeCommand(const uint8_t *header, uint8_t hlen, const uint8_t *body, uint8_t blen) {
     while(USART5->ISR & USART_ISR_RXNE){
         uint8_t ret = USART5->RDR;
     }
@@ -287,8 +263,7 @@ int8_t writeCommand(const uint8_t *header, uint8_t hlen, const uint8_t *body, ui
 }
 
 
-int16_t readResponse(uint8_t * buf, uint8_t len, uint16_t timeout)
-{
+int16_t readResponse(uint8_t * buf, uint8_t len, uint16_t timeout) {
     uint8_t tmp[3];
 
     // Frame Preamble and Start Code
@@ -347,8 +322,7 @@ int16_t readResponse(uint8_t * buf, uint8_t len, uint16_t timeout)
     @returns  The register value.
 */
 /**************************************************************************/
-uint32_t readRegister(uint16_t reg)
-{
+uint32_t readRegister(uint16_t reg) {
     uint32_t response;
     // in order to read, have to first write a READREGISTER command
     pn532_packetbuffer[0] = PN532_COMMAND_READREGISTER;
@@ -378,8 +352,7 @@ uint32_t readRegister(uint16_t reg)
     @returns  0 for failure, 1 for success.
 */
 /**************************************************************************/
-uint32_t writeRegister(uint16_t reg, uint8_t val)
-{
+uint32_t writeRegister(uint16_t reg, uint8_t val) {
     uint32_t response;
 
     pn532_packetbuffer[0] = PN532_COMMAND_WRITEREGISTER;
@@ -408,8 +381,7 @@ uint32_t writeRegister(uint16_t reg, uint8_t val)
     @returns  The chip's firmware version and ID
 */
 /**************************************************************************/
-uint32_t getFirmwareVersion(void)
-{
+uint32_t getFirmwareVersion(void) {
     uint32_t response;
 
     pn532_packetbuffer[0] = PN532_COMMAND_GETFIRMWAREVERSION;
@@ -440,8 +412,7 @@ uint32_t getFirmwareVersion(void)
     @brief  Configures the SAM (Secure Access Module)
 */
 /**************************************************************************/
-int SAMConfig(void)
-{
+int SAMConfig(void) {
     pn532_packetbuffer[0] = PN532_COMMAND_SAMCONFIGURATION;
     pn532_packetbuffer[1] = 0x01; // normal mode;
     pn532_packetbuffer[2] = 0x64; // timeout 50ms * 20 = 1 second
@@ -461,8 +432,7 @@ int SAMConfig(void)
     @returns 1 if everything executed properly, 0 for an error
 */
 /**************************************************************************/
-uint8_t setPassiveActivationRetries(uint8_t maxRetries)
-{
+uint8_t setPassiveActivationRetries(uint8_t maxRetries) {
     pn532_packetbuffer[0] = PN532_COMMAND_RFCONFIGURATION;
     pn532_packetbuffer[1] = 5;    // Config item 5 (MaxRetries)
     pn532_packetbuffer[2] = 0xFF; // MxRtyATR (default = 0xFF)
@@ -486,8 +456,7 @@ uint8_t setPassiveActivationRetries(uint8_t maxRetries)
     @returns 1 if everything executed properly, 0 for an error
 */
 /**************************************************************************/
-int readPassiveTargetID(uint8_t cardbaudrate, uint8_t *uid, uint8_t *uidLength, uint16_t timeout)
-{
+int readPassiveTargetID(uint8_t cardbaudrate, uint8_t *uid, uint8_t *uidLength, uint16_t timeout) {
     pn532_packetbuffer[0] = PN532_COMMAND_INLISTPASSIVETARGET;
     pn532_packetbuffer[1] = 1;  // max 1 cards at once (we can set this to 2 later)
     pn532_packetbuffer[2] = cardbaudrate;
@@ -496,44 +465,5 @@ int readPassiveTargetID(uint8_t cardbaudrate, uint8_t *uid, uint8_t *uidLength, 
         return 0x0;  // command failed
     }
 
-    /*
-    // read data packet
-    if (readResponse(pn532_packetbuffer, 64, 0) < 0) {
-        return 0x0;
-    }
-    */
-
-
-    // check some basic stuff
-    /* ISO14443A card response should be in the following format:
-      byte            Description
-      -------------   ------------------------------------------
-      b0              Tags Found
-      b1              Tag Number (only one used in this example)
-      b2..3           SENS_RES
-      b4              SEL_RES
-      b5              NFCID Length
-      b6..NFCIDLen    NFCID
-    */
-    /*
-    if (pn532_packetbuffer[0] != 1)
-        return 0;
-
-    uint16_t sens_res = pn532_packetbuffer[2];
-    sens_res <<= 8;
-    sens_res |= pn532_packetbuffer[3];
-	*/
-    /*DMSG("ATQA: 0x");  DMSG_HEX(sens_res);
-    DMSG("SAK: 0x");  DMSG_HEX(pn532_packetbuffer[4]);
-    DMSG("\n");*/
-
-    /* Card appears to be Mifare Classic */
-    /*
-    *uidLength = pn532_packetbuffer[5];
-
-    for (uint8_t i = 0; i < pn532_packetbuffer[5]; i++) {
-        uid[i] = pn532_packetbuffer[6 + i];
-    }
-    */
     return 1;
 }

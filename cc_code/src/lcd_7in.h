@@ -9,10 +9,7 @@
 #define LCD_7IN_H_
 
 #define SPI SPI1
-#include "RA8775_commands.h"
 void nano_wait(unsigned int);
-
-
 
 // display's chip select: PB8
 #define CS_NUM  8
@@ -88,6 +85,8 @@ void nano_wait(unsigned int);
 #define MAGENTA 0xF81F ///< Magenta Color
 #define YELLOW 0xFFE0  ///< Yellow Color
 #define WHITE 0xFFFF   ///< White Color
+
+extern uint8_t _textScale;
 
 void setup_spi1();
 void setup_t_irq();

@@ -5,6 +5,7 @@
  *      Author: gunter3
  */
 
+#include <String.h>
 #include "roommates.h"
 
 Roommate roommates[MAXNUM_ROOMMATES];

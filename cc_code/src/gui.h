@@ -9,10 +9,6 @@
 #define GUI_H_
 
 #include "stm32f0xx.h"
-#include "lcd_7in.h"
-#include "stdlib.h"
-#include "stdint.h"
-#include <stdio.h>
 
 #define NUM_BUT  15
 
@@ -37,8 +33,8 @@ typedef struct Button{
     uint16_t color;
 } Button;
 
-
-extern uint8_t _textScale;
+extern stateType guiMenuState;
+extern volatile uint8_t piccing;
 Button buttonArr[NUM_BUT];
 
 
@@ -49,6 +45,7 @@ void update_button(Button but, int x, int y, int w, int h, char*label, uint16_t 
 void guiStateHandler(uint8_t state);
 uint8_t buttonHandler(int xc, int yc);
 void guiMAINInit();
+void guiMAINDraw(void);
 void guiLOADINGInit();
 void guiLOADINGDraw();
 void drawPic(int start_x, int start_y);

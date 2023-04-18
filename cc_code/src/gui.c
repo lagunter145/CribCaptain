@@ -5,26 +5,21 @@
  *      Author: philip
  */
 
-#include "gui.h"
+
+#include <stdio.h>
 #include <string.h>
+#include "gui.h"
 #include "timer.h"
 #include "colors.h"
 #include "rfid.h"
 #include "roommates.h"
 #include "cc_pic.h"
-#include <stdio.h>
+#include "misc.h"
+#include "lcd_7in.h"
 
-extern uint16_t base_color;
-extern uint16_t acce_color;
-extern uint8_t colorUpdated;
-extern uint32_t uid;
-extern char uid_str[10];
-extern uint8_t rfid_tag[20];
 stateType guiMenuState = LOADING;
 volatile uint8_t show_sec = 0;
 volatile uint8_t messaging = 0;
-extern volatile int second;
-extern uint8_t cc_pic[];
 volatile uint8_t piccing = 0;
 
 extern Roommate roommates[MAXNUM_ROOMMATES];
@@ -459,6 +454,7 @@ void guiCHECKINDraw(void) {
 		if(strcmp(roommates[i].uid_str, uid_str) == 0) {
 			temp_rm = &roommates[i];
 			found_rm = 1;
+			toggle_pin(GPIOA, (i + 4));
 		}
 	}
 	if(!found_rm) { // miss gurl, you were not found in the dAtAbAsE
@@ -471,6 +467,9 @@ void guiCHECKINDraw(void) {
 	}
 //
 //	draw_button(&(buttonArr[0]), acce_color, base_color);
+
+	//set_pin(GPIOA, pin, !(gpio->ODR & pinValue));
+	//GPIOA->ODR |= ((0x1) << 6);
 
 	if(temp_rm->home){
 		temp_rm->home = 0;
@@ -502,6 +501,7 @@ void guiCHECKINDraw(void) {
 		itoa(numberGuests, numGuests, 10);
 	    textWrite(numGuests, 2);
 	}
+
 
 
 

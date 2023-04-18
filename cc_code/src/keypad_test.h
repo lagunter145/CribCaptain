@@ -8,9 +8,6 @@
 #ifndef KEYPAD_TEST_H_
 #define KEYPAD_TEST_H_
 
-#include "stm32f0xx.h"
-#include <stdint.h>
-
 void enable_ports_keypad_LED(); //enables ports for keypad and LED
 void setup_tim7(); //setup for TIM7 for keypad
 void TIM7_IRQHandler(); //Timer 7 Handler for Keypad

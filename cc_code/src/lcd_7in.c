@@ -11,10 +11,8 @@
 #include "RA8775_commands.h"
 #include "gui.h"
 
-//int counter = 0;
-uint8_t _textScale;
-//Button button1;
 volatile uint8_t canTouch = 1;
+uint8_t _textScale;
 
 void nano_wait(unsigned int n) {
     asm(    "        mov r0,%0\n"
@@ -76,8 +74,7 @@ void spi1_fast()
 
 // taken from A.6.2 (pg. 944)
 void setup_t_irq(void) {
-	/*
-    // enable the SYSCFGCOMP for EXTI interrupts
+	// enable the SYSCFGCOMP for EXTI interrupts
 	RCC->APB2ENR |= RCC_APB2ENR_SYSCFGCOMPEN;
 	// Select Port A for pin 0 external interrupt by writing 0000 in EXTI0
 	SYSCFG->EXTICR[0] &= (uint16_t)~SYSCFG_EXTICR1_EXTI0;
@@ -88,28 +85,16 @@ void setup_t_irq(void) {
 	// Configure the Trigger Selection bits of the Interrupt line on falling edge (EXTI_FTSR_TR0 = 0x0001)
 	// Writing 1 to corresponding mask bit in EXTI_FTSR means "Falling trigger enabled (for Event and Interrupt) for input line"
 	EXTI->FTSR |= EXTI_FTSR_TR0;
-	EXTI->RTSR &= ~EXTI_RTSR_TR0;
 	// Configure NVIC for External Interrupt
 	// Enable Interrupt on EXTI0_1
 	NVIC->ISER[0] |= 1 << EXTI0_1_IRQn;
 	// Set priority for EXTI0_1
-	NVIC_SetPriority(EXTI0_1_IRQn, 0);
-	*/
-	RCC->APB2ENR |= RCC_APB2ENR_SYSCFGCOMPEN;
-	SYSCFG->EXTICR[0] &= (uint16_t)~SYSCFG_EXTICR1_EXTI0;
-	EXTI->IMR |= EXTI_IMR_MR0;
-	EXTI->FTSR |= EXTI_FTSR_TR0;
-	NVIC->ISER[0] |= 1 << EXTI0_1_IRQn;
 	NVIC_SetPriority(EXTI0_1_IRQn, 1);
-
 }
 
-
 void EXTI0_1_IRQHandler (void) {
-
 	// acknowledge the interrupt
 	EXTI->PR |= EXTI_PR_PR0;
-	//uint8_t temp;
 	uint16_t tx, ty;
 	uint16_t xc, yc;
 	float xScale = 1024.0F/800;
@@ -124,30 +109,20 @@ void EXTI0_1_IRQHandler (void) {
 		//drawCircle(xc, yc, 4, RA8875_WHITE, 1);
 
 		if(buttonHandler(xc,yc) == 0){
-			// return = 0, no GUI state change, acknowledge touch interrupt right away
+		// return = 0, no GUI state change, acknowledge touch interrupt right away
 		  writeReg(RA8875_INTC2, RA8875_INTC2_TP);
 		}
-
-		//canTouch = 0;
-
 	}
-	//	canTouch = 0;
-	//	set_pin(GPIOA, 6, canTouch);
-	//	//tim15_resetInterrupt();
-	//}
-
 }
 
 
 // read RA8875 INT pin (A0)
-uint8_t ra8875INT()
-{
+uint8_t ra8875INT() {
     return (GPIOA->IDR & GPIO_IDR_0);
 }
 
 // Transfers a byte over SPI. Does not control NSSP
-uint8_t transByte(uint8_t d)
-{
+uint8_t transByte(uint8_t d) {
     uint8_t rec;
     // writes data to DR to transmit
     while((SPI->SR & SPI_SR_BSY) != 0)
@@ -163,8 +138,7 @@ uint8_t transByte(uint8_t d)
 }
 
 // Write command to the LCD
-void LCD_WR_REG(uint8_t data)
-{
+void LCD_WR_REG(uint8_t data) {
     CS_LOW;
     transByte(RA8875_CMDWRITE);
     transByte(data);
@@ -172,8 +146,7 @@ void LCD_WR_REG(uint8_t data)
 }
 
 // Write 8-bit data to the LCD
-void LCD_WR_DATA(uint8_t data)
-{
+void LCD_WR_DATA(uint8_t data) {
     CS_LOW;
     transByte(RA8875_DATAWRITE);
     transByte(data);
@@ -181,15 +154,13 @@ void LCD_WR_DATA(uint8_t data)
 }
 
 // read from an RA8875 register
-uint8_t readReg(uint8_t reg)
-{
+uint8_t readReg(uint8_t reg) {
 	LCD_WR_REG(reg);
 	return readData();
 }
 
 // reads data from the RA8875
-uint8_t readData()
-{
+uint8_t readData() {
 	uint8_t read;
 	CS_LOW;
 	transByte(RA8875_DATAREAD);
@@ -277,14 +248,14 @@ void displayOn(int on) {
     writeReg(RA8875_PWRR, RA8875_PWRR_NORMAL | RA8875_PWRR_DISPOFF);
 }
 
-void GPIOX(int on){
+void GPIOX(int on) {
  if (on)
     writeReg(RA8875_GPIOX, 1);
   else
     writeReg(RA8875_GPIOX, 0);
 }
 
-void PWM1out(uint8_t p){
+void PWM1out(uint8_t p) {
     writeReg(RA8875_P1DCR, p);
 }
 

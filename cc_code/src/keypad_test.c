@@ -5,24 +5,15 @@
  *      Author: gunter3
  */
 
-
-/**
-  ******************************************************************************
-  * @file    main.c
-  * @author  Ac6
-  * @version V1.0
-  * @date    01-December-2013
-  * @brief   Default main function.
-  ******************************************************************************
-*/
+#include <stdint.h>
+#include "stm32f0xx.h"
 #include "keypad_test.h"
-
 #include "colors.h"
 
-extern volatile uint16_t base_color;
-extern volatile uint16_t acce_color;
-extern volatile uint16_t color_pairs[16][2];
-extern volatile uint8_t colorUpdated;
+//extern volatile uint16_t base_color;
+//extern volatile uint16_t acce_color;
+//extern volatile uint16_t color_pairs[16][2];
+//extern volatile uint8_t colorUpdated;
 
 //enables GPIO ports for Keypad and LEDs
 void enable_ports_keypad_LED(){
@@ -54,7 +45,6 @@ void enable_ports_keypad_LED(){
                  GPIO_MODER_MODER9_0 |
                  GPIO_MODER_MODER10_0 |
                  GPIO_MODER_MODER11_0;
-
 
      //LED
      //turn on clock for LEDs
@@ -95,7 +85,6 @@ void TIM7_IRQHandler()
     TIM7->SR &= ~TIM_SR_UIF;
 
     for (int col = 1; col <= 4; col++){
-
         //clear all columns and set 'col' column to 1
         drive_column(col);
 
@@ -115,8 +104,6 @@ void TIM7_IRQHandler()
         //interrupt from the timing synchronization
         colorUpdated |=  Keypad_to_LEDs(col, row1, row2, row3, row4);
     }
-
-
 }
 
 //Read the rows values of the keypad

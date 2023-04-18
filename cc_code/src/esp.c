@@ -7,23 +7,12 @@
 
 
 #include "stm32f0xx.h"
-#include "esp.h"
 #include <stdint.h>
 #include <string.h>
-#include "lcd_7in.h"
 #include <stdlib.h>
 #include "timer.h"
-
-char readBuffer[10];
-
-extern volatile int minute;
-extern volatile int hour;
-extern volatile int second;
-
-extern volatile int wifiHTTPState;
-extern volatile int wifiInitialState;
-extern volatile int tim6semaphore;
-
+#include "lcd_7in.h"
+#include "esp.h"
 
 void setup_uart1() {
 	//Enable RCC clocks to GPIOA
@@ -48,7 +37,6 @@ void setup_uart1() {
 	//disable USART1
 	USART1->CR1 &= ~USART_CR1_UE;
 	//Set a Word Size of 8 bits
-	//USART1->CR1 &= ~(USART_CR1_M | 0x10000000);
 	USART1->CR1 &= ~USART_CR1_M;
 	USART1->CR1 &= ~(1<<28);
 	//Set it for one stop bit
@@ -66,11 +54,6 @@ void setup_uart1() {
 	//Enable the recieve not empty interrupt enable
 	USART1->CR1 |= USART_CR1_RXNEIE;
 
-	//Set the peripheral register address in DMA_CPARx
-	//DMA1->CPAR[0] |= USART1;
-	//Enable DMA reciever access
-	//USART1->CR3 |= USART_CR3_DMAR;
-
 	//Baud rate of 115200
 	USART1->BRR = 0;
 	USART1->BRR |= 0x1A1;
@@ -81,10 +64,6 @@ void setup_uart1() {
 
 	//Wait for the TE and RE bits to be acknowledged
 	while(!((USART1->ISR & USART_ISR_TEACK) && (USART1->ISR & USART_ISR_REACK)));
-
-	//Enable the DMA clock
-	//RCC->AHBENR |= RCC_AHBENR_DMAEN;
-
 }
 
 //The WI-FI will be reset when PA11 is set low
@@ -104,10 +83,8 @@ uint8_t wifi_sendchar(uint8_t txChar) {
 
 uint8_t wifi_getchar(void) {
 	//Wait for the USART5 ISR RXNE (read data register is not empty) bit to be set
-	//USART1->ICR |= USART_ICR_FECF;
 	while(!(USART1->ISR & USART_ISR_RXNE));
 	//return the value of the receive data register
-
 	uint8_t c = USART1->RDR;
 	return c;
 }
@@ -119,7 +96,6 @@ char * wifi_sendstring(char * cmd) {
 	}
 	return cmd;
 }
-
 
 char wifi_checkstring(char * response) {
 	char buf[11];
@@ -160,52 +136,14 @@ void http_getrequest(char * uri, int requestState) {
 
 	//send the get request
 	if (requestState == 2) {
-/*
-		//form the HTTP get request and send it
-		wifi_sendstring("GET /");
-		wifi_sendstring(resource);
-		wifi_sendstring("\r\n\r\n\r\n");
-		//write to the screen that it is done
-		textWrite(resource, strlen(resource));
-*/
 		//form the HTTP get request and send it
 		wifi_sendstring("GET /");
 		wifi_sendstring(resource);
 		wifi_sendstring(" HTTP/1.1\r\nHost: ");
 		wifi_sendstring(url);
 		wifi_sendstring("\r\n\r\n");
-		//write to the screen that it is done
-		//textWrite(resource, strlen(resource));
-
-
-
-
-		//int getLength = 26 + 6 + 23 + 4;
-		//wifi_sendstring("GET /api/json/est/now HTTP/1.1\r\nHost: worldclockapi.com\r\n\r\n");
 	}
-
 }
-
-
-/*
- *
- *sample code that i wrote in a different file. Just so I could use it as a reference
-		wifi_sendstring("AT+CIPSTART=\"TCP\",\"api.thingspeak.com\",80\r\n");
-		tim6_changeTimer(3000);
-	}
-	if (state == 4) {
-		wifi_sendstring("AT+CIPSEND=52\r\n");
-		tim6_changeTimer(1000);
-	}
-	if (state == 5)	{
-		wifi_sendstring("GET /update?api_key=2155L8AXXZLPF57M&field1=42\r\n\r\n\r\n");	}
-	if (state <= 5)
-		state++;
-*/
-
-
-
-
 
 
 volatile char wifi_readbuff[10] = "";
@@ -225,20 +163,6 @@ void wifi_clearreadbuff(void) {
 }
 
 void wifi_parseresponse(volatile char * http) {
-	/*//worldclockapi.com
-	char *response = strstr(http, "\r\n\r\n")+4;
-	char *datetime = strstr(response, "\"currentDateTime\":")+18;
-	char *time = strstr(datetime, "T")+1;
-	time[2] = '\0';
-	time[5] = '\0';
-	// might not work because passing indexing the string returns a char
-	// while atoi is expecting a pointer
-	//hour = atoi(&time[0])*10 + atoi();
-	//minute = atoi("3") * 10 + atoi("3");
-	hour = atoi(&time[0]);
-	minute = atoi(&time[3]);
-	*/
-
 	char *response = strstr(http, "\r\n\r\n")+4;
 	char *datetime = strstr(response, "datetime");
 	char *time = strstr(datetime, " ")+1;
@@ -303,15 +227,9 @@ void USART1_IRQHandler(void) {
 					//call some parsing function
 					wifi_parseresponse(wifi_response);
 
-					//hour = 5;
-					//minute = 10;
 					//fix state variables
 					responseStateIPD = 0;
 					responseBytesTotal = 0;
-
-					//clear wifi_readbuff
-					//wifi_clearreadbuff();
-					//USART1->RQR |= USART_RQR_RXFRQ;
 				}
 				break;
 			default: responseStateIPD = 0;
@@ -462,17 +380,11 @@ void USART1_IRQHandler(void) {
 				else {responseStateConnect = 0;}
 				//WIFI CONNECT is read. Update Wifi Connected state variable
 				wifiConnected = 1;
-
 				responseStateConnect = 0;
-
 				break;
-
-
 			default: responseStateConnect = 0;
 		}
-
 	}
-
 }
 
 

@@ -9,6 +9,11 @@
 #define TIMER_H_
 
 
+extern volatile uint8_t show_sec;
+extern volatile char wifiConnected;
+extern volatile char timeAcquired;
+extern volatile uint8_t messaging;
+extern volatile int second;
 
 void setup_tim6();
 void setup_external_timesync();

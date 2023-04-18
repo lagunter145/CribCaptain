@@ -7,15 +7,13 @@
 
 #ifndef RFID_H_
 #define RFID_H_
-#include "stdlib.h"
-// buffer to hold values to send/receive to/from the PN532
-uint8_t pn532_packetbuffer[64];
 
-// byte that holds command for writing to PN532
-uint8_t command;
+#include "RA8775_commands.h"
 
-// flag for indicating a card has been scanned;
-uint8_t card_scanned;
+// global shared variables
+extern volatile uint8_t card_scanned;	// flag for indicating a card has been scanned
+extern char uid_str[10];				// string containing last scanned RFID UID
+extern volatile uint32_t uid;			// int version of RFID UID
 
 // function declarations
 void init_usart5();
