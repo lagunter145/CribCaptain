@@ -10,10 +10,10 @@
 
 #include "Roommates.h"
 
-typedef struct Node_LL_rm{
-    Roommate rm;
-    struct Node_LL_rm *next;
-} Node_LL_rm;
-
+//typedef struct Node_LL_rm{
+//    Roommate rm;
+//    struct Node_LL_rm *next;
+//} Node_LL_rm;
+//
 
 #endif /* NODE_LL_H_ */

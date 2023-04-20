@@ -156,9 +156,16 @@ void write_byte(uint8_t c) {
 // mode to avoid corrupting last transmission.
 
 // basic function to read a byte from the RDR register
+int RFID_TIMEOUT = 100000;
 uint8_t read_byte(void) {
     // wait for RXNE bit to be set
-    while (!(USART5->ISR & USART_ISR_RXNE)) {}
+	int tc = 0;
+    while (!(USART5->ISR & USART_ISR_RXNE)) {
+    	if (tc < RFID_TIMEOUT)
+    		tc++;
+    	else
+    		return 0;
+    }
     uint8_t c = USART5->RDR;
     return c;
 }
@@ -211,7 +218,11 @@ int8_t receive(uint8_t *buf, int len, uint16_t timeout) {
 }
 
 int8_t readAckFrame() {
-    const uint8_t PN532_ACK[] = {0, 0, 0xFF, 0, 0xFF, 0};
+
+	// if still broken consider commenting everything in this function
+	// out and just return 0
+
+	const uint8_t PN532_ACK[] = {0, 0, 0xFF, 0, 0xFF, 0};
     uint8_t ackBuf[6];
 
     if( receive(ackBuf, 6, 0) <= 0 ){

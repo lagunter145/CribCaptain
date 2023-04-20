@@ -13,6 +13,8 @@
 #include "timer.h"
 #include "lcd_7in.h"
 #include "esp.h"
+#include "roommates.h"
+#include "misc.h"
 
 void setup_uart1() {
 	//Enable RCC clocks to GPIOA
@@ -108,6 +110,36 @@ char wifi_checkstring(char * response) {
 	return 1;
 }
 
+volatile char url[200] = "";
+const char serverURL[] = "192.168.175.87";
+//192.168.175.87/checkin.php/?uid=2&checkedIn=9&numGuest=12
+void http_setupcheckin(char * uid, uint8_t checkedIn, uint8_t numGuest) {
+	char buff[3];
+	//zero the contnets of the url string
+	memset(url, 0, strlen(url));
+	strcat(url, serverURL);
+	strcat(url, "/checkin.php/?uid=");
+	strcat(url, uid);
+	strcat(url, "&checkedIn=");
+	itoa(checkedIn, buff, 10);
+	strcat(url, buff);
+	strcat(url, "&numGuest=");
+	itoa(numGuest, buff, 10);
+	strcat(url,buff);
+	//
+	wifiTimeHTTPState = 0;
+	wifiHTTPState = 0;
+	tim6semaphore = 2;
+	tim6_triggerInterrupt();
+
+}
+
+//192.168.175.87/checkin.php/?uid=
+void http_setupupdate(char *uid) {
+	//
+
+}
+
 
 void http_getrequest(char * uri, int requestState) {
 	//parse the url from the uri
@@ -147,7 +179,7 @@ void http_getrequest(char * uri, int requestState) {
 
 
 volatile char wifi_readbuff[10] = "";
-volatile char wifi_response[800];
+volatile char wifi_response[1500];
 volatile char responseStateIPD = 0;
 volatile char responseStateOK = 0;
 volatile char responseStateDisconnect = 0;
@@ -175,6 +207,90 @@ void wifi_parseresponse(volatile char * http) {
 	second = atoi(&time[6]);
 
 	timeAcquired = 1;
+}
+
+// function to parse out events from an http response
+void wifi_parseresponse_events(volatile char * http, char* uid) {
+	/*
+	char * response = strstr(http, "\r\n\r\n")+4;
+	char * event_str;
+	char day;
+	int i = 0;
+	// have to linear search for matching uid
+	while (i < 4) {
+		if (strcmp(roommates[i].uid_str, uid)) {
+			roommates[i].events[0].name = event_str;
+			roommates[i].events[0].day = day;
+			// get the 2nd event/day
+			roommates[i].events[1].name = event_str;
+			roommates[i].events[1].day = day;
+			break;
+		}
+	}
+	// look for the 2nd uid and repeat the process
+	*/
+	char *rmates[4];
+	rmates[0] = strstr(http, "name") + 4;
+	for (int i = 0; i < 3; i++)
+	  rmates[i+1] = strstr(rmates[i], "name") + 4;
+
+    for (int i = 0; i < 4; i++) {
+		char buff[20] = "";
+		//get the number of Guests
+		char * numGuestStr = strstr(rmates[i], "numGuest") + 11;
+		char * numGuestStrEnd = strstr(numGuestStr, "\"");
+		strncpy(buff, numGuestStr ,numGuestStrEnd-numGuestStr);
+		int numGuest = atoi(buff);
+		roommates[i].num_guests = numGuest;
+
+		//get the checkedIn
+		memset(buff,0,strlen(buff));
+		char * checkedInStr = strstr(rmates[i], "checkedIn") + 12;
+		char * checkedInStrEnd = strstr(checkedInStr, "\"");
+		strncpy(buff, checkedInStr , checkedInStrEnd-checkedInStr);
+		int checkedIn = atoi(buff);
+		roommates[i].home = checkedIn;
+		if (checkedIn) {
+			set_pin(GPIOA, (i + 5), 1);
+		}
+
+		//get event1
+		memset(buff,0,strlen(buff));
+		char * event1Str = strstr(rmates[i], "event1") + 9;
+		char * event1StrEnd = strstr(event1Str, "\"");
+		strncpy(buff, event1Str , event1StrEnd-event1Str);
+		strcpy(roommates[i].events[0].name, buff);
+		printf("%s\n", buff);
+
+
+		//get event2
+		memset(buff,0,strlen(buff));
+		char * event2Str = strstr(rmates[i], "event2") + 9;
+		char * event2StrEnd = strstr(event2Str, "\"");
+		strncpy(buff, event2Str , event2StrEnd-event2Str);
+		strcpy(roommates[i].events[1].name, buff);
+		printf("%s\n", buff);
+
+		//get edow1
+		memset(buff,0,strlen(buff));
+		char * edow1Str = strstr(rmates[i], "edow1") + 8;
+		char * edow1StrEnd = strstr(edow1Str, "\"");
+		char edow1 = edow1Str[0];
+		roommates[i].events[0].day = edow1;
+		//strcpy(roommates[0].events[0].day, buff);
+
+		//get edow2
+		memset(buff,0,strlen(buff));
+		char * edow2Str = strstr(rmates[i], "edow2") + 8;
+		char * edow2StrEnd = strstr(edow2Str, "\"");
+		char edow2 = edow2Str[0];
+		roommates[i].events[1].day = edow2;
+		//strncpy(buff, edow2Str , edow2StrEnd-edow2Str);
+		//strcpy(roommates[0].events[1].day, buff);
+    }
+
+
+
 }
 
 void USART1_IRQHandler(void) {
@@ -224,8 +340,11 @@ void USART1_IRQHandler(void) {
 					//textWrite(wifi_response, 537);
 
 					wifi_response[responseBytesTotal] = '\0';
-					//call some parsing function
-					wifi_parseresponse(wifi_response);
+					//if the device is receiving the time, call some parsing function
+					if (tim6semaphore == 1) {
+						wifi_parseresponse_events(wifi_response, 0);
+						wifi_sendstring("AT+CIPCLOSE\r\n");
+					}
 
 					//fix state variables
 					responseStateIPD = 0;
@@ -262,12 +381,20 @@ void USART1_IRQHandler(void) {
 					wifiInitialState++;
 					tim6_triggerInterrupt();
 				}
-				//if wifi is in initialization state, then increment the wifi http state
+				//if wifi is establishing the time, then increment the wifi time state
 				//and trigger the timer 6 interrupt
 				if (tim6semaphore == 1) {
+					wifiTimeHTTPState++;
+					tim6_triggerInterrupt();
+				}
+				//if wifi is sending a normal http request, then increment the state
+				//and trigger the timer 6 interrupt
+				if (tim6semaphore == 2) {
+
 					wifiHTTPState++;
 					tim6_triggerInterrupt();
 				}
+
 				//reset the response state variable
 				responseStateOK = 0;
 				break;

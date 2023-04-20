@@ -37,9 +37,10 @@ extern stateType guiMenuState;
 extern volatile uint8_t piccing;
 Button buttonArr[NUM_BUT];
 
-
+//void setup_tim16();
 Button init_button(int x, int y, int w, int h, char* label, uint16_t color);
 Button init_small_button(int x, int y, int w, int h, char* label, int labelLength, uint16_t color);
+void setup_tim16();
 int check_pressed(Button but, int x, int y);
 void update_button(Button but, int x, int y, int w, int h, char*label, uint16_t color);
 void guiStateHandler(uint8_t state);
@@ -59,6 +60,7 @@ void guiROOMMATESInit();
 void guiROOMMATESDraw();
 void checkmark(uint16_t start_x, uint16_t start_y);
 void guiMSGInit();
+int rightALIGN(int right_side, uint8_t string_length);
 
 
 #endif /* GUI_H_ */

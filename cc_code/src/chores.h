@@ -11,22 +11,28 @@
 #include "stm32f0xx.h"
 #include "stdlib.h"
 
-#include "Node_LL.h"
+// #include "Node_LL.h"
 
-extern Roommate roommates[];
+//extern Roommate roommates[];
 
 typedef struct Chore{
-    char name[15];
-    uint8_t nameLength;
-    struct Node_LL_rm *done_chore;
-    struct Node_LL_rm *not_done_chore;
-    // linked list of events
-    // queue for chores
+    char name[20];
+    char day;
+//    uint8_t nameLength;
+//    struct Node_LL_rm *done_chore;
+//    struct Node_LL_rm *not_done_chore;
+//    // linked list of events
+//    // queue for chores
 } Chore;
 
-typedef struct Chore_List {
-	struct Chore *head;
-};
+typedef struct Event{
+    char name[20];
+    char day;
+} Event;
+
+//typedef struct Chore_List {
+//	struct Chore *head;
+//};
 
 
 #endif /* CHORES_H_ */

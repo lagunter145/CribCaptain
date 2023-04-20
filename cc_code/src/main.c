@@ -19,6 +19,9 @@
 #include "keypad_test.h"
 #include "gui.h"
 #include "roommates.h"
+#include "ff.h"
+#include "diskio.h"
+#include "fifo.h"
 			
 volatile uint8_t card_scanned = 0;
 
@@ -62,6 +65,18 @@ int main(void)
 	setup_tim7();
 	setup_pcb_leds();
 
+	// -----------------
+	// SD INITIALIZATION
+	// -----------------
+	//enable_tty_interrupt();
+	//setup_tim14();
+//	FATFS fs_storage;
+//	FATFS *fs = &fs_storage;
+//	f_mount(fs, "", 1);
+//	FILE* test;
+//	f_open(test, "test.txt", 0);
+	//command_shell();
+
 	// ------------------
 	// LCD INITIALIZATION
 	// ------------------
@@ -93,11 +108,13 @@ int main(void)
 	}
 
 	// GUI Initialization
-	guiMAINInit();
-	guiCHECKINInit();
-	guiCALENDARInit();
+	setup_tim16();
+	//guiMAINInit();
+	//guiCHECKINInit();
+	//guiCALENDARInit();
 	guiLOADINGInit();
 	//guiLOADINGDraw();
+	//drawPic(200,200);
 
 	setup_t_irq();
 	guiStateHandler(LOADING);

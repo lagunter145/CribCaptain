@@ -184,6 +184,8 @@ void EXTI4_15_IRQHandler(void) {
 				if (minute == 60) {
 					minute = 0;
 					hour++;
+					if (hour == 24)
+						hour = 0;
 				}
 			}
 
@@ -213,8 +215,10 @@ void EXTI4_15_IRQHandler(void) {
 	}
 }
 
+
 volatile int wifiInitialState = 0;
-volatile int wifiHTTPState = 0;
+volatile int wifiTimeHTTPState = 0;
+volatile int wifiHTTPState = -1;
 
 void TIM6_DAC_IRQHandler(void) {
 	//Acknowledge the interrupt
@@ -234,6 +238,7 @@ void TIM6_DAC_IRQHandler(void) {
 		}
 		//connect to Wifi
 		if (wifiInitialState == 2) {
+			//wifi_sendstring("AT+CWJAP=\"Xyz\",\"team4crib\"\r\n");
 			wifi_sendstring("AT+CWJAP=\"Xyz\",\"team4crib\"\r\n");
 			tim6_changeTimer(30000);
 		}
@@ -245,34 +250,54 @@ void TIM6_DAC_IRQHandler(void) {
 		}
 	}
 
-	//HTTP get requests
+	//HTTP time get requests
 	if (tim6semaphore == 1) {
-		//char url[200] = "api.thingspeak.com/update?api_key=2155L8AXXZLPF57M&field1=53";
-		// ***** Maybe try worldtimeapi instead
-		// worldtimeapi.org/api/timezone/America/new_york.txt
-		//char url[200] = "worldclockapi.com/api/json/est/now";
-		//char url[200] = "worldtimeapi.org/api/timezone/America/new_york.txt";
-		//char url[200] = "timeapi.io/api/Time/current/zone?timeZone=America/Indiana/Indianapolis";
-		char url[200] = "timezone.abstractapi.com/v1/current_time/?api_key=9e51598312064a7494ae4b60562fbc71&location=Indianapolis";
-		//char url[200] = "192.168.175.87";
+		//char timeurl[200] = "timezone.abstractapi.com/v1/current_time/?api_key=9e51598312064a7494ae4b60562fbc71&location=Indianapolis";
+		char timeurl[200] = "192.168.175.87/update.php/?uid=1b1350e0";
+		//char timeurl[200] = "192.168.175.87/checkin.php/?uid=1&checkedIn=9&numGuest=12";
 
 		//connect the socket (AT+CIPSTART)
-		if (wifiHTTPState == 0) {
-			http_getrequest(url, 0);
+		if (wifiTimeHTTPState == 0) {
+			http_getrequest(timeurl, 0);
 			//tim6_changeTimer(4000);
 		}
 		//Send the number of bytes in the get request (AT+CIPSEND)
-		if (wifiHTTPState == 1) {
-			http_getrequest(url, 1);
+		if (wifiTimeHTTPState == 1) {
+			http_getrequest(timeurl, 1);
 			//tim6_changeTimer(500);
 		}
 		//send the get request
+		if (wifiTimeHTTPState == 2) {
+			http_getrequest(timeurl, 2);
+		}
+		if (wifiTimeHTTPState == 3) {
+			tim6semaphore = 2;
+		}
+
+	}
+
+	//Normal HTTP get requests
+	if (tim6semaphore == 2) {
+		char weburl[200] = "";
+		for (int i = 0; i < strlen(url); i++)
+			weburl[i] = url[i];
+
+		//connect the socket (AT+CIPSTART)
+		if (wifiHTTPState == 0) {
+			http_getrequest(weburl, 0);
+		}
+		//Send the number of bytes in the get request (AT+CIPSEND)
+		if (wifiHTTPState == 1) {
+			http_getrequest(weburl, 1);
+		}
+		//send the get request
 		if (wifiHTTPState == 2) {
-			http_getrequest(url, 2);
+			http_getrequest(weburl, 2);
 			wifiHTTPState++;
 		}
 
 	}
+
 
 
 }

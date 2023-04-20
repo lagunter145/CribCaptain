@@ -67,13 +67,13 @@ void setup_tim7() {
 
     //set timer to update event exactly once per millisecond (f = 1 kHz)
     TIM7->PSC = 4800 - 1;
-    TIM7->ARR = 1000 - 1;
+    TIM7->ARR = 2500 - 1;
 
     //Update Interrupt enable
     TIM7->DIER |= TIM_DIER_UIE;
     //enable interrupt in NVIC ISER
     NVIC->ISER[0] |= (1 << TIM7_IRQn);
-	NVIC_SetPriority(TIM7_IRQn, 2);
+	NVIC_SetPriority(TIM7_IRQn, 3);
     //enable the counter
     TIM7->CR1 |= TIM_CR1_CEN;
 }
@@ -161,8 +161,8 @@ int Keypad_to_LEDs(int col_val, int row1, int row2, int row3, int row4){
         }
         else if(row3 == 1){
             //HEX: 7
-        	base_color = color_pairs[5][0];
-        	acce_color = color_pairs[5][1];
+        	base_color = color_pairs[6][0];
+        	acce_color = color_pairs[6][1];
             val = '7';
         }
         else if(row4 == 1)  {
@@ -193,6 +193,9 @@ int Keypad_to_LEDs(int col_val, int row1, int row2, int row3, int row4){
         }
         else if(row4 == 1){
             //HEX: 0
+        	uint16_t temp = base_color;
+        	base_color = acce_color;
+        	acce_color = temp;
             val = '0';
         }
     }
@@ -217,8 +220,9 @@ int Keypad_to_LEDs(int col_val, int row1, int row2, int row3, int row4){
         }
         else if(row4 == 1) {
             //HEX: # -- treated as F for purpose of this test
-        	base_color = color_pairs[14][0];
-        	acce_color = color_pairs[14][1];
+        	uint16_t temp = base_color;
+			base_color = acce_color;
+        	acce_color = temp;
             val = '#';
         }
     }

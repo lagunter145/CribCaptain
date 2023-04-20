@@ -21,14 +21,14 @@ void spi_clear_rxfifo(SPI_TypeDef *s)
 
 uint8_t sdcard_write(uint8_t b)
 {
-    while((SPI1->SR & SPI_SR_TXE) == 0)
+    while((SPI2->SR & SPI_SR_TXE) == 0)
         ;
-    *((uint8_t*)&(SPI1->DR)) = b;
+    *((uint8_t*)&(SPI2->DR)) = b;
     int value = 0xff;
-    while ((SPI1->SR & SPI_SR_RXNE) != SPI_SR_RXNE)
+    while ((SPI2->SR & SPI_SR_RXNE) != SPI_SR_RXNE)
         ;
-        value = *(uint8_t *)&(SPI1->DR);
-    while((SPI1->SR & SPI_SR_BSY) == SPI_SR_BSY)
+        value = *(uint8_t *)&(SPI2->DR);
+    while((SPI2->SR & SPI_SR_BSY) == SPI_SR_BSY)
         ;
     return value;
 }
@@ -111,8 +111,51 @@ int sdcard_writeblock(BYTE buffer[], int len)
 /* Inidialize a Drive                                                    */
 /*-----------------------------------------------------------------------*/
 
-void setup_spi1();
-void spi_high_speed();
+void setup_spi2()
+{
+    RCC->AHBENR |= RCC_AHBENR_GPIOBEN; // Enable the RCC clock to GPIOB.
+    // clear and set the MODER value for PB9 for output (01 in MODER)
+    GPIOB->MODER &= ~GPIO_MODER_MODER9;
+    GPIOB->MODER |= GPIO_MODER_MODER9_0;
+    // clear and set the MODER for PB10 for alternate functions (10 in MODER)
+	GPIOB->MODER &= ~(GPIO_MODER_MODER10);
+	GPIOB->MODER |= (GPIO_MODER_MODER10_1);
+	RCC->AHBENR |= RCC_AHBENR_GPIOCEN; // Enable the RCC clock to GPIOC.
+	// clear and set the MODER for PC2,3 for alternate functions (10 in MODER)
+	GPIOC->MODER &= ~(GPIO_MODER_MODER2 | GPIO_MODER_MODER3);
+	GPIOC->MODER |= (GPIO_MODER_MODER2_1 | GPIO_MODER_MODER2_1);
+
+    // PB10 = SPI2_SCK so needs to be alternate function 5 (0101) in AFR[1]
+    GPIOB->AFR[1] &= ~GPIO_AFRH_AFR10;
+    GPIOB->AFR[1] &= (0x0101) << 8;
+    // PC2 = SPI2_MISO so needs to be alternate function 1 (0001) in AFR[0]
+    GPIOC->AFR[0] &= ~GPIO_AFRL_AFR2;
+    GPIOC->AFR[0] &= (0x0001) << 8;
+    // PC3 = SPI2_MOSI so needs to be alternate function 1 (0001) in AFR[0]
+    GPIOC->AFR[0] &= ~GPIO_AFRL_AFR3;
+    GPIOC->AFR[0] &= (0x0001) << 12;
+
+    RCC->APB1ENR |= RCC_APB1ENR_SPI2EN; // Enable the RCC clock to the SPI2 peripheral.
+    SPI2->CR1 &= ~SPI_CR1_SPE; // Disable the SPI2 peripheral by turning off the SPE bit
+    SPI2->CR1 |= SPI_CR1_BR; // Set baud rate as low as possible (48MHz / 256)
+    SPI2->CR1 &= ~SPI_CR1_BIDIMODE; // Ensure that BIDIMODE and BIDIOE are cleared.
+    SPI2->CR1 &= ~SPI_CR1_BIDIOE;
+    SPI2->CR1 |= SPI_CR1_MSTR; // Enable Master mode
+    SPI2->CR2 |= SPI_CR2_NSSP; // Set NSSP and configure the peripheral for an 8-bit word (which is the default).
+    SPI2->CR2 &= ~SPI_CR2_DS; // (defaults to 8-bit 0111)
+    SPI2->CR2 |= SPI_CR2_FRXTH; // Set the bit that sets the FIFO-reception threshold to 8-bits.
+    SPI2->CR1 |= SPI_CR1_SPE; // Enable the SPI channel
+}
+
+void spi_high_speed()
+{
+    SPI2->CR1 &= ~SPI_CR1_SPE; // Disable the SPI2 peripheral by turning off the SPE bit
+    //SPI2 -> CR1 &= ~SPI_CR1_BR; // Configure SPI2 for a 24 MHz SCK rate
+
+    SPI2->CR1 &= ~SPI_CR1_BR; // Configure SPI2 for a 12 MHz SCK rate
+    SPI2->CR1 |= SPI_CR1_BR_1;
+    SPI2->CR1 |= SPI_CR1_SPE; // Enable the SPI channel
+}
 
 static DSTATUS sdcard_status = STA_NOINIT;
 
@@ -128,11 +171,11 @@ DSTATUS disk_initialize (
     count++;
     if (count > 10)
         return STA_NOINIT;
-    setup_spi1();
+    setup_spi2();
     disable_sdcard();
     sdcard_init_clock();
     spi_high_speed();
-    spi_clear_rxfifo(SPI1);
+    spi_clear_rxfifo(SPI2);
     enable_sdcard();
     value = sdcard_cmd(0, 0x00000000, 0x95); // Go to idle state
 //    for (;;) {

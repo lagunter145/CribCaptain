@@ -2,14 +2,18 @@
 /  Low level disk interface modlue include file   (C)ChaN, 2019          /
 /-----------------------------------------------------------------------*/
 
-#ifndef _DISKIO_DEFINED
-#define _DISKIO_DEFINED
+#ifndef _DISKIO_H_
+#define _DISKIO_H_
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+#include "stm32f0xx.h"
+#include "stdlib.h"
+
 /* Status of Disk Functions */
+typedef uint8_t BYTE;
 typedef BYTE	DSTATUS;
 
 /* Results of Disk Functions */
@@ -25,7 +29,8 @@ typedef enum {
 /*---------------------------------------*/
 /* Prototypes for disk control functions */
 
-
+void setup_spi1();
+void spi_high_speed();
 DSTATUS disk_initialize (BYTE pdrv);
 DSTATUS disk_status (BYTE pdrv);
 DRESULT disk_read (BYTE pdrv, BYTE* buff, LBA_t sector, UINT count);

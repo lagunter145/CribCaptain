@@ -25,13 +25,15 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
+#include "stm32f0xx.h"
+#include "stdlib.h"
 #include "ffconf.h"		/* FatFs configuration options */
 
 #if FF_DEFINED != FFCONF_DEF
 #error Wrong configuration file (ffconf.h).
 #endif
 
+typedef uint8_t BYTE;
 
 /* Integer types used for FatFs API */
 
@@ -57,6 +59,8 @@ typedef unsigned long	DWORD;	/* 32-bit unsigned integer */
 typedef WORD			WCHAR;	/* UTF-16 character type */
 #endif
 
+typedef DWORD FSIZE_t;
+typedef DWORD LBA_t;
 
 /* Definitions of volume management */
 
@@ -121,8 +125,6 @@ typedef DWORD LBA_t;
 #if FF_LBA64
 #error exFAT needs to be enabled when enable 64-bit LBA
 #endif
-typedef DWORD FSIZE_t;
-typedef DWORD LBA_t;
 #endif
 
 
@@ -418,6 +420,7 @@ int ff_del_syncobj (FF_SYNC_t sobj);	/* Delete a sync object */
 #define AM_DIR	0x10	/* Directory */
 #define AM_ARC	0x20	/* Archive */
 
+#include "diskio.h"
 
 #ifdef __cplusplus
 }

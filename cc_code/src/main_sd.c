@@ -252,8 +252,8 @@ int main()
 
     // Test for 2.8 Test the command shell and clock
 
-    enable_tty_interrupt();
-    setup_tim14();
+    //enable_tty_interrupt();
+    //setup_tim14();
     FATFS fs_storage;
     FATFS *fs = &fs_storage;
     f_mount(fs, "", 1);
