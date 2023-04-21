@@ -33,6 +33,7 @@ void wifi_clearreadbuff(void);
 void wifi_parseresponse(volatile char * http);
 void tim6_triggerInterrupt(void);
 void http_refresh(uint8_t state);
+void http_setupchore(char * id, uint8_t doneToday);
 
 
 #endif /* ESP_H_ */

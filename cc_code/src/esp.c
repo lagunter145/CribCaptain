@@ -115,7 +115,7 @@ const char serverURL[] = "192.168.193.87";
 //192.168.175.87/checkin.php/?uid=2&checkedIn=9&numGuest=12
 void http_setupcheckin(char * uid, uint8_t checkedIn, uint8_t numGuest) {
 	char buff[3];
-	//zero the contnets of the url string
+	//zero the contents of the url string
 	memset(url, 0, strlen(url));
 	strcat(url, serverURL);
 	strcat(url, "/checkin.php/?uid=");
@@ -130,6 +130,25 @@ void http_setupcheckin(char * uid, uint8_t checkedIn, uint8_t numGuest) {
 	wifiTimeHTTPState = 0;
 	wifiHTTPState = 0;
 	tim6semaphore =2;
+	tim6_triggerInterrupt();
+
+}
+
+
+void http_setupchore(char * id, uint8_t doneToday) {
+	char buff[3];
+	//zero the contents of the url string
+	memset(url, 0, strlen(url));
+	strcat(url, serverURL);
+	strcat(url, "/choredone.php/?id=");
+	strcat(url, id);
+	strcat(url, "&doneToday=");
+	itoa(doneToday, buff, 10);
+	strcat(url, buff);
+	//
+	wifiTimeHTTPState = 0;
+	wifiHTTPState = 0;
+	tim6semaphore = 2;
 	tim6_triggerInterrupt();
 
 }

@@ -524,7 +524,7 @@ void guiREFRESHInit(void) {
 	buttonArr[0] = init_button(0, 0, 250, 100, "", base_color);
 	buttonArr[1] = init_button(25, 390, 125, 75, "MAIN", acce_color);
 	buttonArr[2] = init_button(50, 200, 200, 80, "TIME", acce_color);
-	buttonArr[3] = init_button(300, 200, 200, 80, "ROOMMATES", acce_color);
+	buttonArr[3] = init_button(275, 200, 250, 80, "ROOMMATES", acce_color);
 	buttonArr[4] = init_button(550, 200, 200, 80, "CHORES", acce_color);
 }
 void guiREFRESHDraw(void) {
@@ -1128,25 +1128,35 @@ void guiStateHandler(stateType state) {
 			} else if (buttonArr[4].pressed) {
 				buttonArr[4].pressed = 0;
 				chores[roommates[0].chore_4_today].done_today = !chores[roommates[0].chore_4_today].done_today;
+				//http_setupchore("0", chores[roommates[0].chore_4_today].done_today);
+				char buff[1];
+				itoa(roommates[0].chore_4_today, buff, 10);
+				http_setupchore(buff, chores[roommates[0].chore_4_today].done_today);
 				guiMAINDraw();
 				// acknowledge touch interrupt
 				writeReg(RA8875_INTC2, RA8875_INTC2_TP);
 			} else if (buttonArr[5].pressed) {
 				buttonArr[5].pressed = 0;
 				chores[roommates[1].chore_4_today].done_today = !chores[roommates[1].chore_4_today].done_today;
-				guiMAINDraw();
+				char buff[1];
+				itoa(roommates[1].chore_4_today, buff, 10);
+				http_setupchore(buff, chores[roommates[1].chore_4_today].done_today);				guiMAINDraw();
 				// acknowledge touch interrupt
 				writeReg(RA8875_INTC2, RA8875_INTC2_TP);
 			} else if (buttonArr[6].pressed) {
 				buttonArr[6].pressed = 0;
 				chores[roommates[2].chore_4_today].done_today = !chores[roommates[2].chore_4_today].done_today;
-				guiMAINDraw();
+				char buff[1];
+				itoa(roommates[2].chore_4_today, buff, 10);
+				http_setupchore(buff, chores[roommates[2].chore_4_today].done_today);				guiMAINDraw();
 				// acknowledge touch interrupt
 				writeReg(RA8875_INTC2, RA8875_INTC2_TP);
 			} else if (buttonArr[7].pressed) {
 				buttonArr[7].pressed = 0;
 				chores[roommates[3].chore_4_today].done_today = !chores[roommates[3].chore_4_today].done_today;
-				guiMAINDraw();
+				char buff[1];
+				itoa(roommates[3].chore_4_today, buff, 10);
+				http_setupchore(buff, chores[roommates[3].chore_4_today].done_today);				guiMAINDraw();
 				// acknowledge touch interrupt
 				writeReg(RA8875_INTC2, RA8875_INTC2_TP);
 			}
