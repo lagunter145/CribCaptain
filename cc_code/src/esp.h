@@ -13,6 +13,7 @@ char readBuffer[10];
 extern volatile int minute;
 extern volatile int hour;
 extern volatile int second;
+extern volatile int dayOfWeek;
 
 extern char refreshState;
 extern volatile int wifiHTTPState;

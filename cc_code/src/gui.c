@@ -59,6 +59,16 @@ char* intruder_msg[] = {	"Are you sure you live here?",
 						"BARK BARK BARK (Get out)"
 };
 
+char* daysOfTheWeek[] = {
+		"Monday",
+		"Tuesday",
+		"Wednesday",
+		"Thursday",
+		"Friday",
+		"Saturday",
+		"Sunday"
+};
+
 int ways_to_say_goodbye_size = 16;
 int intruder_msg_size = 16;
 
@@ -414,6 +424,8 @@ void guiMAINDraw(void) {
 	textEnlarge(2);
 	textColor(acce_color, base_color);
 	textWrite("MAIN", 4);
+	textSetCursor(328, 10);
+	textWrite(daysOfTheWeek[dayOfWeek], strlen(daysOfTheWeek[dayOfWeek]));
 
 
 	dist_chores();
@@ -498,8 +510,50 @@ void guiMAINDraw(void) {
 	buttonArr[6].on = 1;
 	buttonArr[7].pressed = 0;
 	buttonArr[7].on = 1;
+}
 
+// REFRESH screen
+// buttons
+// buttonArr[0] = second toggling for displaying time
+// buttonArr[1] = exits to main screen
+// buttonArr[2] = refresh time
+// buttonArr[3] = refresh roommates
+// buttonArr[4] = refresh chores
+void guiREFRESHInit(void) {
+	////450, 300
+	buttonArr[0] = init_button(0, 0, 250, 100, "", base_color);
+	buttonArr[1] = init_button(25, 390, 125, 75, "MAIN", acce_color);
+	buttonArr[2] = init_button(50, 200, 200, 80, "TIME", acce_color);
+	buttonArr[3] = init_button(300, 200, 200, 80, "ROOMMATES", acce_color);
+	buttonArr[4] = init_button(550, 200, 200, 80, "CHORES", acce_color);
+}
+void guiREFRESHDraw(void) {
+	fillScreen(base_color);
+	draw_button(&(buttonArr[1]), acce_color, base_color);
+	draw_button(&(buttonArr[2]), acce_color, base_color);
+	draw_button(&(buttonArr[3]), acce_color, base_color);
+	draw_button(&(buttonArr[4]), acce_color, base_color);
+	textMode();
+	int x_start = rightALIGN(800, strlen("REFRESH"));
+	textSetCursor(x_start, 10);
+	textEnlarge(2);
+	textColor(acce_color, base_color);
+	textWrite("REFRESH", 8);
+	textSetCursor(328, 10);
+	textWrite(daysOfTheWeek[dayOfWeek], strlen(daysOfTheWeek[dayOfWeek]));
 
+	buttonArr[0].pressed = 0;
+	buttonArr[0].on = 1;
+	buttonArr[1].pressed = 0;
+	buttonArr[1].on = 1;
+	buttonArr[2].pressed = 0;
+	buttonArr[2].on = 1;
+	buttonArr[3].pressed = 0;
+	buttonArr[3].on = 1;
+	buttonArr[4].pressed = 0;
+	buttonArr[4].on = 1;
+
+	graphicsMode();
 }
 
 uint8_t numberGuests = 0;
@@ -560,6 +614,8 @@ void guiCHECKINDraw(void) {
 		textEnlarge(2);
 		textColor(acce_color, base_color);
 		textWrite("CHECKIN", 7);
+		textSetCursor(328, 10);
+		textWrite(daysOfTheWeek[dayOfWeek], strlen(daysOfTheWeek[dayOfWeek]));
 		textSetCursor(100, 80);
 		textWrite(temp_rm->name, temp_rm->nameLength);
 		temp_rm->home = 1;
@@ -634,15 +690,17 @@ void guiCALENDARDraw(int mode, int redraw) {
 		textEnlarge(2);
 		textColor(acce_color, base_color);
 		textWrite("CALENDAR", 8);
+		textSetCursor(328, 10);
+		textWrite(daysOfTheWeek[dayOfWeek], strlen(daysOfTheWeek[dayOfWeek]));
 
 		textSetCursor(127, 64);
-		textWrite("MON", 3);
+		textWrite(daysOfTheWeek[dayOfWeek], 3);
 
 		textSetCursor(382, 64);
-		textWrite("TUE", 3);
+		textWrite(daysOfTheWeek[((dayOfWeek + 1) % 7)], 3);
 
 		textSetCursor(640, 64);
-		textWrite("WED", 3);
+		textWrite(daysOfTheWeek[((dayOfWeek + 2) % 7)], 3);
 
 		graphicsMode();
 
@@ -685,7 +743,7 @@ void guiCALENDARDraw(int mode, int redraw) {
 					// iterate through chores of roommate
 					if((d > 0) || (!chores[roommates[i].chore_4_today].done_today)) {
 						textSetCursor(x, y);
-						textColor(rand() % 0xFFFF, base_color);
+						textColor((((acce_color + base_color) / 2) % 0xFFFF), base_color);
 						if(mode == 2) {
 							textWrite(roommates[i].name, 3);
 							textWrite(": ", 2);
@@ -773,6 +831,8 @@ void guiROOMMATESDraw() {
 	textEnlarge(2);
 	textColor(acce_color, base_color);
 	textWrite("ROOMMATES", 9);
+	textSetCursor(328, 10);
+	textWrite(daysOfTheWeek[dayOfWeek], strlen(daysOfTheWeek[dayOfWeek]));
 
 	textSetCursor(50, 65);
 	textWrite("Roommate", 8);
@@ -1025,6 +1085,7 @@ void guiStateHandler(stateType state) {
 	switch(state) {
 		case LOADING: // current state is LOADING
 			if (buttonArr[1].pressed){
+				buttonArr[1].pressed = 0;
 				// switch states
 				guiMAINInit();
 				guiMAINDraw();
@@ -1040,17 +1101,15 @@ void guiStateHandler(stateType state) {
 				// acknowledge touch interrupt
 				writeReg(RA8875_INTC2, RA8875_INTC2_TP);
 			} else if (buttonArr[1].pressed){
+				buttonArr[1].pressed = 0;
 				// switch states
-				http_refresh(1);
-				timeAcquired = 0;
-				guiLOADINGInit();
-				guiLOADINGDraw();
-				guiMenuState = LOADING;
-
-
+				guiREFRESHInit();
+				guiREFRESHDraw();
+				guiMenuState = REFRESH;
 				// acknowledge touch interrupt
 				writeReg(RA8875_INTC2, RA8875_INTC2_TP);
 			} else if (buttonArr[2].pressed) {
+				buttonArr[2].pressed = 0;
 				// switch states
 				old_mode = 0;
 				guiCALENDARInit();
@@ -1092,6 +1151,47 @@ void guiStateHandler(stateType state) {
 				writeReg(RA8875_INTC2, RA8875_INTC2_TP);
 			}
 			break;
+		case REFRESH:
+			if (buttonArr[0].pressed){
+				buttonArr[0].pressed = 0;
+				// acknowledge touch interrupt
+				writeReg(RA8875_INTC2, RA8875_INTC2_TP);
+			} else if (buttonArr[1].pressed){
+				buttonArr[1].pressed = 0;
+				guiMAINInit();
+				guiMAINDraw(); //return to the Main state for now
+				guiMenuState = MAIN;
+				// acknowledge touch interrupt
+				writeReg(RA8875_INTC2, RA8875_INTC2_TP);
+			} else if (buttonArr[2].pressed) { //time pressed
+				buttonArr[2].pressed = 0;
+				http_refresh(1);
+				timeAcquired = 0;
+				guiLOADINGInit();
+				guiLOADINGDraw();
+				guiMenuState = LOADING;
+				// acknowledge touch interrupt
+				writeReg(RA8875_INTC2, RA8875_INTC2_TP);
+			} else if (buttonArr[3].pressed) { //roommates pressed
+				buttonArr[3].pressed = 0;
+				http_refresh(2);
+				timeAcquired = 0;
+				guiLOADINGInit();
+				guiLOADINGDraw();
+				guiMenuState = LOADING;
+				// acknowledge touch interrupt
+				writeReg(RA8875_INTC2, RA8875_INTC2_TP);
+			} else if (buttonArr[4].pressed) { //chores pressed
+				buttonArr[4].pressed = 0;
+				http_refresh(3);
+				timeAcquired = 0;
+				guiLOADINGInit();
+				guiLOADINGDraw();
+				guiMenuState = LOADING;
+				// acknowledge touch interrupt
+				writeReg(RA8875_INTC2, RA8875_INTC2_TP);
+			}
+			break;
 		case CHECKIN:
 			if (card_scanned) {
 				guiCHECKINInit();
@@ -1112,6 +1212,7 @@ void guiStateHandler(stateType state) {
 				guiMAINInit();
 				guiMAINDraw(); //return to the Main state for now
 				guiMenuState = MAIN;
+				buttonArr[1].pressed = 0;
 				// acknowledge touch interrupt
 				writeReg(RA8875_INTC2, RA8875_INTC2_TP);
 			} else if (buttonArr[2].pressed) { //-
@@ -1164,6 +1265,7 @@ void guiStateHandler(stateType state) {
 				// acknowledge touch interrupt
 				writeReg(RA8875_INTC2, RA8875_INTC2_TP);
 			} else if (buttonArr[1].pressed) {
+				buttonArr[1].pressed = 0;
 				guiMAINInit();
 				guiMAINDraw(); //return to the Main state for now
 				guiMenuState = MAIN;

@@ -20,6 +20,7 @@ volatile int jiffy = 0;
 volatile int second = 0;
 volatile int minute = 0;
 volatile int hour = 0;
+volatile int dayOfWeek = 0;
 
 //Sets up the time synchronization for the device
 void setup_external_timesync() {
@@ -148,6 +149,7 @@ void write_time() {
 		textWrite(time, 8);
 	} else {
 		textWrite(time, 5);
+
 		// don't like how it redraws every second, but putting in button handler
 		// caused issues with show_sec
 		drawRect(150, 22, 220, 60, base_color, 1);
@@ -204,7 +206,7 @@ void EXTI4_15_IRQHandler(void) {
 				write_loading();
 			} else if (guiMenuState == MSG) {
 				messaging++;
-				if(messaging > 5) {
+				if(messaging > 3) {
 					messaging = 0;
 				}
 			} else {

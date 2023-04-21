@@ -16,6 +16,7 @@
 typedef enum {
 	LOADING,
 	MAIN,
+	REFRESH,
 	CHECKIN,
 	CALENDAR,
 	ROOMMATES,
@@ -53,6 +54,8 @@ void guiLOADINGDraw();
 void drawPic(int start_x, int start_y);
 void bmpDraw(char* filename, int start_x, int start_y);
 uint16_t color565(uint8_t r, uint8_t g, uint8_t b);
+void guiREFRESHInit(void);
+void guiREFRESHDraw(void);
 void guiCHECKINInit();
 void substring(char* source, char* dest, int s, int e);
 void guiCALENDARInit();

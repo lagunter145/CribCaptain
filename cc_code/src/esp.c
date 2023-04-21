@@ -134,17 +134,23 @@ void http_setupcheckin(char * uid, uint8_t checkedIn, uint8_t numGuest) {
 
 }
 
-char refreshState = '0';
+char refreshState = '1';
 void http_refresh(uint8_t state) {
 	//update time
-	if (state == 0) {
-		refreshState = '0';
+	if (state == 1) {
+		refreshState = '1';
 		wifiTimeHTTPState = 0;
 		tim6semaphore = 1;
 	}
 	//update roomate data
-	if (state == 1) {
-		refreshState = '1';
+	if (state == 2) {
+		refreshState = '2';
+		wifiTimeHTTPState = 0;
+		tim6semaphore = 1;
+	}
+	//update chore data
+	if (state == 3) {
+		refreshState = '3';
 		wifiTimeHTTPState = 0;
 		tim6semaphore = 1;
 	}
@@ -222,7 +228,7 @@ void wifi_parseresponse(volatile char * http) {
 // function to parse out events from an http response
 void wifi_parseresponse_events(volatile char * http, char refreshState) {
 
-	if (refreshState == '0') {
+	if (refreshState == '1') {
 		//parse the time first
 		char timeBuff[2];
 		char *time = strstr(http, "\"time\"=\"") + 8;
@@ -235,10 +241,20 @@ void wifi_parseresponse_events(volatile char * http, char refreshState) {
 		strncpy(timeBuff, time, 2);
 		second = atoi(timeBuff);
 
+		//reset timeBuff
+		timeBuff[0] = '\0';
+		timeBuff[1] = '\0';
+
+		//parse the day of the week
+		char *weekday = strstr(time, "\"dayOfWeek\"=\"") + 13;
+		strncpy(timeBuff, weekday, 1);
+		dayOfWeek = atoi(timeBuff) - 1;
+
+
 		timeAcquired = 1;
 	}
 
-	if (refreshState == '1') {
+	if (refreshState == '2') {
 		//parse the rest of the update message
 		char *rmates[4];
 		rmates[0] = strstr(http, "name") + 4;
@@ -300,10 +316,38 @@ void wifi_parseresponse_events(volatile char * http, char refreshState) {
 			timeAcquired = 1;
 
 		}
-    }
 
+	}
+
+
+	if (refreshState == '3') {
+		char *chore_arr[4];
+		chore_arr[0] = strstr(http, "{") + 1;
+		for (int i = 0; i < 3; i++)
+			chore_arr[i+1] = strstr(chore_arr[i], "{") + 1;
+
+		for (int i = 0; i < 4; i++) {
+			char buff[20] = "";
+			char * nameStr = strstr(chore_arr[i], "name") + 7;
+			char * nameStrEnd = strstr(nameStr, "\"");
+			strncpy(buff, nameStr, nameStrEnd-nameStr);
+			strcpy(chores[i].name, buff);
+			chores[i].nameLength = strlen(chores[i].name);
+
+			memset(buff,0,strlen(buff));
+			char * doneTodayStr = strstr(chore_arr[i], "doneToday") + 12;
+			char * doneTodayStrEnd = strstr(doneTodayStr, "\"");
+			strncpy(buff, doneTodayStr , doneTodayStrEnd-doneTodayStr);
+			chores[i].done_today = atoi(buff);
+		}
+
+		timeAcquired = 1;
+	}
 
 }
+
+
+
 
 void USART1_IRQHandler(void) {
 	if (USART1->ISR & USART_ISR_RXNE) {
