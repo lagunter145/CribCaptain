@@ -171,16 +171,6 @@ Button init_button(int x, int y, int w, int h, char* label, uint16_t color){
 	but.labelLength = strlen(but.label);
     but.pressed = 0;
     but.color = color;
-    //drawRect(x, y, x+w, y+h, color, 1);
-    /*
-    textMode();
-	textSetCursor(x, y);
-	textEnlarge(2);
-	textTransparent(0x8170);
-	textWrite(but.label, but.labelLength);
-	graphicsMode();
-    */
-
     return but;
 }
 Button init_small_button(int x, int y, int w, int h, char* label, int labelLength, uint16_t color) {
@@ -194,16 +184,6 @@ Button init_small_button(int x, int y, int w, int h, char* label, int labelLengt
 	but.labelLength = labelLength;
     but.pressed = 0;
     but.color = color;
-    //drawRect(x, y, x+w, y+h, color, 1);
-    /*
-    textMode();
-	textSetCursor(x, y);
-	textEnlarge(2);
-	textTransparent(0x8170);
-	textWrite(but.label, but.labelLength);
-	graphicsMode();
-    */
-
     return but;
 }
 int check_pressed(Button but, int x, int y) {
@@ -219,10 +199,8 @@ void update_button(Button but, int x, int y, int w, int h, char*label, uint16_t 
     but.x2 = x+w;
     but.y1 = y;
     but.y2 = y+h;
-    //but.label = label;
     but.pressed = 0;
     but.color = base_color;
-    //drawRect(x, y, x+w, y+h, color, 1);
 }
 
 // LOADING screen
@@ -237,15 +215,6 @@ void guiLOADINGInit(void) {
 	//initialize buttons
 	buttonArr[0] = init_button(0, 0, 250, 100, "", base_color);
 	buttonArr[1] = init_button(10, 350, 200, 80, "Hello", acce_color);
-	/*
-	textMode();
-	textSetCursor(600, 10);
-	textEnlarge(2);
-	textColor(0x8170, RA8875_WHITE);
-	textWrite("LOADIN'", 7);
-	//graphicsMode();
-	 *
-	 */
 }
 void guiLOADINGDraw(void) {
 	// clear screen
@@ -258,16 +227,8 @@ void guiLOADINGDraw(void) {
 	textColor(acce_color, base_color);
 	textWrite("LOADING", 7);
 
-
-	draw_button(&(buttonArr[1]), base_color, acce_color);
 	// draw button
-	/*
-	textSetCursor(buttonArr[0].x1, buttonArr[0].y1);
-	textTransparent(acce_color);
-	strcpy(buttonArr[0].label ,"back to main :)");
-	buttonArr[0].labelLength = strlen(buttonArr[0].label);
-	textWrite(buttonArr[0].label, buttonArr[0].labelLength);
-	*/
+	draw_button(&(buttonArr[1]), base_color, acce_color);
 
 	// turn off TIME button
 	buttonArr[0].pressed = 0;
@@ -428,28 +389,22 @@ void guiMAINInit(void) {
 	//clear screen
 	//fillScreen(YELLOW);
 	//initialize buttons
-	buttonArr[0] = init_button(0, 0, 300, 200, "", base_color);
-	buttonArr[1] = init_button(25, 350, 200, 80, "Loading", acce_color);
+	buttonArr[0] = init_button(0, 0, 300, 100, "", base_color);
+	buttonArr[1] = init_button(25, 375, 200, 80, "Refresh", acce_color);
 	buttonArr[2] = init_button(275, 350, 200, 80, "Calendar", acce_color);
 	buttonArr[3] = init_button(525, 350, 250, 80, "Roommates", acce_color);
-
-	/*
-	textMode();
-	textSetCursor(600, 10);
-	textEnlarge(2);
-	textColor(0x8170, RA8875_WHITE);
-	textWrite("MAIN", 4);
-	graphicsMode();
-
-	write_time();
-	*/
+	buttonArr[4] = init_button(100, 100, 300, 100, "", acce_color);
+	buttonArr[5] = init_button(400, 100, 300, 100, "", acce_color);
+	buttonArr[6] = init_button(100, 200, 300, 100, "", acce_color);
+	buttonArr[7] = init_button(400, 200, 300, 100, "", acce_color);
 }
+
 void guiMAINDraw(void) {
 	// clear screen
 	fillScreen(base_color);
 	// draw screen
 	// draw button
-	draw_button(&(buttonArr[1]), base_color, acce_color);
+	//draw_button(&(buttonArr[1]), base_color, acce_color);
 	draw_button(&(buttonArr[1]), acce_color, base_color);
 	draw_button(&(buttonArr[2]), acce_color, base_color);
 	draw_button(&(buttonArr[3]), acce_color, base_color);
@@ -460,12 +415,70 @@ void guiMAINDraw(void) {
 	textColor(acce_color, base_color);
 	textWrite("MAIN", 4);
 
+
+	dist_chores();
+	textEnlarge(1);
+	uint16_t x = 105;
+	uint16_t y = 105;
+	for(int i = 0; i < MAXNUM_ROOMMATES; i++) {
+		if(i == 1) {
+			x = 405;
+			y = 105;
+		} else if (i == 2) {
+			x = 105;
+			y = 205;
+		} else if (i == 3) {
+			x = 405;
+			y = 205;
+		}
+		textSetCursor(x, y);
+		if(chores[roommates[i].chore_4_today].done_today) {
+			graphicsMode();
+			drawRect(x - 5, y - 5, (x - 5) + 300, (y - 5) + 100, acce_color, 1);
+			textMode();
+			textColor(base_color, acce_color);
+		}
+		textWrite(roommates[i].name, roommates[i].nameLength);
+		textSetCursor(x + 10, y + 55);
+		textWrite(chores[roommates[i].chore_4_today].name, chores[roommates[i].chore_4_today].nameLength);
+		textColor(acce_color, base_color);
+	}
+
+//	textWrite(roommates[0].name, roommates[0].nameLength);
+//	textSetCursor(110, 160);
+//	textWrite(chores[roommates[0].chore_4_today].name, strlen(chores[roommates[0].chore_4_today].name));
+//
+//	textSetCursor(405, 105);
+//	textWrite(roommates[1].name, roommates[1].nameLength);
+//	textSetCursor(410, 160);
+//	textWrite(chores[roommates[1].chore_4_today].name, strlen(chores[roommates[1].chore_4_today].name));
+//
+//	textSetCursor(105, 205);
+//	textWrite(roommates[2].name, roommates[2].nameLength);
+//	textSetCursor(110, 260);
+//	textWrite(chores[roommates[2].chore_4_today].name, strlen(chores[roommates[2].chore_4_today].name));
+//
+//	textSetCursor(405, 205);
+//	textWrite(roommates[0].name, roommates[0].nameLength);
+//	textSetCursor(410, 260);
+//	textWrite(chores[roommates[0].chore_4_today].name, strlen(chores[roommates[0].chore_4_today].name));
+
+
+	// Draw chores buttons
+
+//	for(int r = 0; r < MAXNUM_ROOMMATES; r++) {
+//		textWrite(roommates[r].name, roommates[r].nameLength);
+//		textWrite(chores[roommates[r].chore_4_today].name, chores[roommates[r].chore_4_today].nameLength);
+//	}
 //	textSetCursor(buttonArr[0].x1, buttonArr[0].y1);
 //	textTransparent(base_color);
 //	strcpy(buttonArr[1].label, "button2");
 //	buttonArr[1].labelLength = strlen(buttonArr[1].label);
 //	textWrite(buttonArr[1].label, buttonArr[1].labelLength);
 	graphicsMode();
+	drawRect(100, 100, 700, 300, acce_color, 0);
+	drawRect(100, 100, 400, 200, acce_color, 0);
+	drawRect(400, 200, 700, 300, acce_color, 0);
 
 
 	// clear the button flags
@@ -477,6 +490,14 @@ void guiMAINDraw(void) {
 	buttonArr[2].on = 1;
 	buttonArr[3].pressed = 0;
 	buttonArr[3].on = 1;
+	buttonArr[4].pressed = 0;
+	buttonArr[4].on = 1;
+	buttonArr[5].pressed = 0;
+	buttonArr[5].on = 1;
+	buttonArr[6].pressed = 0;
+	buttonArr[6].on = 1;
+	buttonArr[7].pressed = 0;
+	buttonArr[7].on = 1;
 
 
 }
@@ -501,6 +522,7 @@ int srand_set = 0;
 void guiCHECKINDraw(void) {
 	if(!srand_set) {
 		srand(2147483647 / second);
+		srand_set = 1;
 	}
 	for(int i = 0; i < MAXNUM_ROOMMATES; i++) {
 		if(strcmp(roommates[i].uid_str, uid_str) == 0) {
@@ -646,8 +668,8 @@ void guiCALENDARDraw(int mode, int redraw) {
 		int bm_y = 320; // bottom most y for table
 		int x = lm_x;
 		int y = um_y;
-		int move_y = 25;
-		textEnlarge(0);
+		int move_y = 35;
+		textEnlarge(1);
 		textColor(acce_color, base_color);
 		int max_rows = 0;
 		int max_length = 15;
@@ -655,54 +677,68 @@ void guiCALENDARDraw(int mode, int redraw) {
 		char day_arr[3] = {'m', 't', 'w'};
 		// repeatedly draw data for all 3 days
 		for(int d = 0; d < 3; d++) {
+			textColor(acce_color, base_color);
 			for(int i = 0; i < MAXNUM_ROOMMATES; i++) {
 				// draw data if all roommates are selected or if one roommate is
+				Chore temp = chores[roommates[i].scheduled[d]];
 				if((mode == 2) || (mode == (i + 3))) {
 					// iterate through chores of roommate
-					for(int c = 0; (c < (sizeof(roommates[i].chores) / sizeof(roommates[i].chores[0]))) && (!max_rows); c++) {
-						// don't print chore if it's null or day doesn't match
-						if (strcmp(roommates[i].chores[c].name, NULL) && roommates[i].chores[c ].day == day_arr[d]) {
+					if((d > 0) || (!chores[roommates[i].chore_4_today].done_today)) {
 						textSetCursor(x, y);
+						textColor(rand() % 0xFFFF, base_color);
 						if(mode == 2) {
 							textWrite(roommates[i].name, 3);
 							textWrite(": ", 2);
 							max_length -= 5;
-						}
-						if(strlen(roommates[i].chores[c].name) > max_length) {
-							length = max_length;
+							if(strlen(temp.name) > max_length) {
+								length = max_length;
+							} else {
+								length = temp.nameLength;
+							}
+							textWrite(temp.name, length);
+							y += move_y;
+							x = lm_x;
+							if(y > bm_y) {
+								max_rows = 1;
+							}
+							max_length = 15;
 						} else {
-							length = strlen(roommates[i].chores[c].name);
-						}
-						textWrite(roommates[i].chores[c].name, length);
-						y += move_y;
-						x = lm_x;
-						if(y > bm_y) {
-							max_rows = 1;
-						}
-						max_length = 15;
+							if(strlen(temp.name) > max_length) {
+								length = max_length;
+							} else {
+								length = temp.nameLength;
+							}
+							textWrite(temp.name, length);
+							y += move_y;
+							x = lm_x;
+							if(y > bm_y) {
+								max_rows = 1;
+							}
+							max_length = 15;
 						}
 					}
 					// iterate through events of roommate
+					textColor(acce_color, base_color);
 					for(int e = 0; (e < (sizeof(roommates[i].events) / sizeof(roommates[i].events[0]))) && (!max_rows); e++) {
 						if (strcmp(roommates[i].events[e].name, NULL) && roommates[i].events[e].day == day_arr[d]) {
-						textSetCursor(x, y);
-						if(mode == 2) {
-							textWrite(roommates[i].name, 3);
-							textWrite(": ", 2);
-							max_length -= 5;
-						}
-						if(strlen(roommates[i].events[e].name) > max_length) {
-							length = max_length;
-						} else {
-							length = strlen(roommates[i].events[e].name);
-						}
-						textWrite(roommates[i].events[e].name, length);
-						y += move_y;
-						x = lm_x;
-						if(y > bm_y) {
-							max_rows = 1;
-						}
-						max_length = 15;
+							textSetCursor(x, y);
+							if(mode == 2) {
+								textWrite(roommates[i].name, 3);
+								textWrite(": ", 2);
+								max_length -= 5;
+							}
+							if(strlen(roommates[i].events[e].name) > max_length) {
+								length = max_length;
+							} else {
+								length = strlen(roommates[i].events[e].name);
+							}
+							textWrite(roommates[i].events[e].name, length);
+							y += move_y;
+							x = lm_x;
+							if(y > bm_y) {
+								max_rows = 1;
+							}
+							max_length = 15;
 						}
 					}
 				}
@@ -870,6 +906,111 @@ int rightALIGN(int right_side, uint8_t string_length){
 	return x_start;
 }
 
+uint8_t days_calc = 0x0;
+void dist_chores() {
+	// move to when program is initialized or move on to next day
+	if(!srand_set) {
+		srand(2147483647 / second);
+		srand_set = 1;
+	}
+	// recalculate for first day
+	uint8_t chose_wrong = 1;
+	uint8_t chosen = 0;
+	if((days_calc & 0x4) == 0) {
+		// iterate through all chores
+		for(int c = 0; c < MAXNUM_CHORES; c++) {
+			// if everybody has done the chore, clear who's done
+			if(chores[c].whos_done_num == 4) {
+				clearChoreData(chores[c]);
+			}
+			// keep iterating until that baby chosen right
+			while(chose_wrong) {
+				// try out a random number from 0 to max number of roommates
+				chosen = rand() % MAXNUM_ROOMMATES;
+				// checks if the chore was already done by chosen roommate or
+				// if chosen roommate already has chore scheduled for today
+				if((chores[c].whos_done[chosen] == 0) && (roommates[chosen].scheduled[0] == 0)) {
+					chose_wrong = 0; // exits the loop
+				}
+			}
+			// resets chose_wrong for next iteration
+			chose_wrong = 1;
+			// checks that chosen roommate has done task
+			chores[c].whos_done[chosen] = 1;
+			// checks that chosen roommate has already been scheduled for the day
+			roommates[chosen].scheduled[0] = c;
+			// identifies correct roommate as the one who is chosen to do that chore for the day
+			chores[c].scheduled[0] = roommates[chosen];
+			// increment the number of roommates that has done chore
+			chores[c].whos_done_num = chores[c].whos_done_num + 1;
+			roommates[chosen].chore_4_today = c;
+		}
+		days_calc |= 0x4;
+	}
+	if((days_calc & 0x2) == 0) {
+		// iterate through all chores
+		for(int c = 0; c < MAXNUM_CHORES; c++) {
+			// if everybody has done the chore, clear who's done
+			if(chores[c].whos_done_num == 4) {
+				clearChoreData(chores[c]);
+			}
+			// keep iterating until that baby chosen right
+			while(chose_wrong) {
+				// try out a random number from 0 to max number of roommates
+				chosen = rand() % MAXNUM_ROOMMATES;
+				// checks if the chore was already done by chosen roommate or
+				// if chosen roommate already has chore scheduled for today
+				if((chores[c].whos_done[chosen] == 0) && (roommates[chosen].scheduled[1] == 0)) {
+					chose_wrong = 0; // exits the loop
+				}
+			}
+			// resets chose_wrong for next iteration
+			chose_wrong = 1;
+			// checks that chosen roommate has done task
+			chores[c].whos_done[chosen] = 1;
+			// checks that chosen roommate has already been scheduled for the day
+			roommates[chosen].scheduled[1] = c;
+			// identifies correct roommate as the one who is chosen to do that chore for the day
+			chores[c].scheduled[1] = roommates[chosen];
+			// increment the number of roommates that has done chore
+			chores[c].whos_done_num = chores[c].whos_done_num + 1;
+			//roommates[chosen].chore_4_today = c;
+		}
+		days_calc |= 0x2;
+	}
+	if((days_calc & 0x1) == 0) {
+		// iterate through all chores
+		for(int c = 0; c < MAXNUM_CHORES; c++) {
+			// if everybody has done the chore, clear who's done
+			if(chores[c].whos_done_num == 4) {
+				clearChoreData(chores[c]);
+			}
+			// keep iterating until that baby chosen right
+			while(chose_wrong) {
+				// try out a random number from 0 to max number of roommates
+				chosen = rand() % MAXNUM_ROOMMATES;
+				// checks if the chore was already done by chosen roommate or
+				// if chosen roommate already has chore scheduled for today
+				if((chores[c].whos_done[chosen] == 0) && (roommates[chosen].scheduled[2] == 0)) {
+					chose_wrong = 0; // exits the loop
+				}
+			}
+			// resets chose_wrong for next iteration
+			chose_wrong = 1;
+			// checks that chosen roommate has done task
+			chores[c].whos_done[chosen] = 1;
+			// checks that chosen roommate has already been scheduled for the day
+			roommates[chosen].scheduled[2] = c;
+			// identifies correct roommate as the one who is chosen to do that chore for the day
+			chores[c].scheduled[2] = roommates[chosen];
+			// increment the number of roommates that has done chore
+			chores[c].whos_done_num = chores[c].whos_done_num + 1;
+			//roommates[chosen].chore_4_today = c;
+		}
+		days_calc |= 0x1;
+	}
+}
+
 // =======================================================================================
 // GUI State Handler is called to draw the GUI according to the input GUI State variable
 // Structure:
@@ -900,9 +1041,13 @@ void guiStateHandler(stateType state) {
 				writeReg(RA8875_INTC2, RA8875_INTC2_TP);
 			} else if (buttonArr[1].pressed){
 				// switch states
+				http_refresh(1);
+				timeAcquired = 0;
 				guiLOADINGInit();
 				guiLOADINGDraw();
 				guiMenuState = LOADING;
+
+
 				// acknowledge touch interrupt
 				writeReg(RA8875_INTC2, RA8875_INTC2_TP);
 			} else if (buttonArr[2].pressed) {
@@ -921,8 +1066,31 @@ void guiStateHandler(stateType state) {
 				guiMenuState = ROOMMATES;
 				// acknowledge touch interrupt
 				writeReg(RA8875_INTC2, RA8875_INTC2_TP);
+			} else if (buttonArr[4].pressed) {
+				buttonArr[4].pressed = 0;
+				chores[roommates[0].chore_4_today].done_today = !chores[roommates[0].chore_4_today].done_today;
+				guiMAINDraw();
+				// acknowledge touch interrupt
+				writeReg(RA8875_INTC2, RA8875_INTC2_TP);
+			} else if (buttonArr[5].pressed) {
+				buttonArr[5].pressed = 0;
+				chores[roommates[1].chore_4_today].done_today = !chores[roommates[1].chore_4_today].done_today;
+				guiMAINDraw();
+				// acknowledge touch interrupt
+				writeReg(RA8875_INTC2, RA8875_INTC2_TP);
+			} else if (buttonArr[6].pressed) {
+				buttonArr[6].pressed = 0;
+				chores[roommates[2].chore_4_today].done_today = !chores[roommates[2].chore_4_today].done_today;
+				guiMAINDraw();
+				// acknowledge touch interrupt
+				writeReg(RA8875_INTC2, RA8875_INTC2_TP);
+			} else if (buttonArr[7].pressed) {
+				buttonArr[7].pressed = 0;
+				chores[roommates[3].chore_4_today].done_today = !chores[roommates[3].chore_4_today].done_today;
+				guiMAINDraw();
+				// acknowledge touch interrupt
+				writeReg(RA8875_INTC2, RA8875_INTC2_TP);
 			}
-
 			break;
 		case CHECKIN:
 			if (card_scanned) {
@@ -1073,20 +1241,6 @@ void guiStateHandler(stateType state) {
 
 
 uint8_t buttonHandler(int xc, int yc) {
-//	if (buttonArr[0].on != 0) {
-//		uint8_t temp = buttonArr[0].pressed;
-//		buttonArr[0].pressed = check_pressed(buttonArr[0], xc, yc);
-//        if (buttonArr[0].pressed == 0 && temp != buttonArr[0].pressed) {
-//        	guiStateHandler(MAIN);
-//        }
-//	}
-//	if (buttonArr[1].on != 0) {
-//		uint8_t temp = buttonArr[1].pressed;
-//		buttonArr[1].pressed = check_pressed(buttonArr[1], xc, yc);
-//		if (buttonArr[1].pressed == 0 && temp != buttonArr[1].pressed) {
-//			guiStateHandler(LOADING);
-//		}
-//	}
 	uint8_t state_flag = 0;	// flag to indicate a GUI state is boutta change
 	if (buttonArr[0].on) {
         if (buttonArr[0].pressed == 0) {
@@ -1180,6 +1334,19 @@ uint8_t buttonHandler(int xc, int yc) {
 		if (buttonArr[6].pressed == 0) {
 			buttonArr[6].pressed = check_pressed(buttonArr[6], xc, yc);
 			if(buttonArr[6].pressed) {
+				state_flag = 1;
+				return 1;
+			}
+		}
+		else {
+			state_flag = 1;
+			return 1;
+		}
+	}
+	if (buttonArr[7].on) {
+		if (buttonArr[7].pressed == 0) {
+			buttonArr[7].pressed = check_pressed(buttonArr[7], xc, yc);
+			if(buttonArr[7].pressed) {
 				state_flag = 1;
 				return 1;
 			}

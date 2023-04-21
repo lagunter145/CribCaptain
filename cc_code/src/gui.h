@@ -9,6 +9,7 @@
 #define GUI_H_
 
 #include "stm32f0xx.h"
+#include "roommates.h"
 
 #define NUM_BUT  15
 
@@ -61,6 +62,7 @@ void guiROOMMATESDraw();
 void checkmark(uint16_t start_x, uint16_t start_y);
 void guiMSGInit();
 int rightALIGN(int right_side, uint8_t string_length);
+void dist_chores();
 
 
 #endif /* GUI_H_ */

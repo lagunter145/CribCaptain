@@ -7,8 +7,8 @@
 
 #include <stdint.h>
 #include "stm32f0xx.h"
-#include "keypad_test.h"
 #include "colors.h"
+#include "keypad.h"
 
 //extern volatile uint16_t base_color;
 //extern volatile uint16_t acce_color;

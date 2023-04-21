@@ -13,26 +13,17 @@
 
 // #include "Node_LL.h"
 
-//extern Roommate roommates[];
-
-typedef struct Chore{
-    char name[20];
-    char day;
-//    uint8_t nameLength;
-//    struct Node_LL_rm *done_chore;
-//    struct Node_LL_rm *not_done_chore;
-//    // linked list of events
-//    // queue for chores
-} Chore;
-
 typedef struct Event{
     char name[20];
     char day;
 } Event;
 
-//typedef struct Chore_List {
-//	struct Chore *head;
-//};
+// global array of chores
+#define MAX_CHORES 10
+//extern Chore chore_q [MAX_CHORES];
+extern int chore_head;
+extern int chore_tail;
 
+void assign_chores();
 
 #endif /* CHORES_H_ */

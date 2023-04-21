@@ -253,9 +253,9 @@ void TIM6_DAC_IRQHandler(void) {
 	//HTTP time get requests
 	if (tim6semaphore == 1) {
 		//char timeurl[200] = "timezone.abstractapi.com/v1/current_time/?api_key=9e51598312064a7494ae4b60562fbc71&location=Indianapolis";
-		char timeurl[200] = "192.168.175.87/update.php/?uid=1b1350e0";
+		char timeurl[200] = "192.168.193.87/update.php/?type=";
 		//char timeurl[200] = "192.168.175.87/checkin.php/?uid=1&checkedIn=9&numGuest=12";
-
+        timeurl[32] = refreshState;
 		//connect the socket (AT+CIPSTART)
 		if (wifiTimeHTTPState == 0) {
 			http_getrequest(timeurl, 0);
@@ -272,6 +272,7 @@ void TIM6_DAC_IRQHandler(void) {
 		}
 		if (wifiTimeHTTPState == 3) {
 			tim6semaphore = 2;
+			wifiTimeHTTPState = -1;
 		}
 
 	}
@@ -279,20 +280,26 @@ void TIM6_DAC_IRQHandler(void) {
 	//Normal HTTP get requests
 	if (tim6semaphore == 2) {
 		char weburl[200] = "";
-		for (int i = 0; i < strlen(url); i++)
-			weburl[i] = url[i];
 
 		//connect the socket (AT+CIPSTART)
 		if (wifiHTTPState == 0) {
+			for (int i = 0; i < strlen(url); i++)
+				weburl[i] = url[i];
 			http_getrequest(weburl, 0);
 		}
 		//Send the number of bytes in the get request (AT+CIPSEND)
 		if (wifiHTTPState == 1) {
+			for (int i = 0; i < strlen(url); i++)
+				weburl[i] = url[i];
 			http_getrequest(weburl, 1);
 		}
 		//send the get request
 		if (wifiHTTPState == 2) {
+			for (int i = 0; i < strlen(url); i++)
+				weburl[i] = url[i];
 			http_getrequest(weburl, 2);
+			//wifiTimeHTTPState = 0;
+			//tim6semaphore = 1;
 			wifiHTTPState++;
 		}
 

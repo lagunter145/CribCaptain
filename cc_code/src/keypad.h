@@ -5,8 +5,9 @@
  *      Author: gunter3
  */
 
-#ifndef KEYPAD_TEST_H_
-#define KEYPAD_TEST_H_
+#ifndef KEYPAD_H_
+#define KEYPAD_H_
+#include "stm32f0xx.h"
 
 void enable_ports_keypad_LED(); //enables ports for keypad and LED
 void setup_tim7(); //setup for TIM7 for keypad
@@ -17,4 +18,4 @@ int Keypad_to_LEDs(int col_val, int row1, int row2, int row3, int row4); //key t
 void setn(int32_t pin_num, int32_t val); //sets GPIO pin_num to val
 void mysleep(void); //slows down scanning
 
-#endif /* KEYPAD_TEST_H_ */
+#endif /* KEYPAD_H_ */

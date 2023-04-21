@@ -16,12 +16,12 @@
 #include "esp.h"
 #include "timer.h"
 #include "misc.h"
-#include "keypad_test.h"
 #include "gui.h"
 #include "roommates.h"
 #include "ff.h"
 #include "diskio.h"
 #include "fifo.h"
+#include "keypad.h"
 			
 volatile uint8_t card_scanned = 0;
 

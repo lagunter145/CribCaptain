@@ -14,6 +14,7 @@ extern volatile int minute;
 extern volatile int hour;
 extern volatile int second;
 
+extern char refreshState;
 extern volatile int wifiHTTPState;
 extern volatile int wifiInitialState;
 extern volatile int wifiTimeHTTPState;
@@ -30,6 +31,8 @@ void http_getrequest(char * uri, int requestState);
 void wifi_clearreadbuff(void);
 void wifi_parseresponse(volatile char * http);
 void tim6_triggerInterrupt(void);
+void http_refresh(uint8_t state);
+
 
 #endif /* ESP_H_ */
 
