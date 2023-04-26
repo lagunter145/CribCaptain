@@ -27,6 +27,17 @@ volatile uint8_t card_scanned = 0;
 
 int main(void)
 {
+	//RCC->APB2RSTR |= RCC_APB2RSTR_SYSCFGRST;
+	//RCC->CSR |= RCC_CSR_SFTRSTF;
+	//RCC->BDCR |= RCC_BDCR_BDRST;
+
+	// ---------------------
+	// KEYPAD INITIALIZATION
+	// ---------------------
+	enable_ports_keypad_LED();
+	setup_tim7();
+	setup_pcb_leds();
+
 	// -------------------------
 	// RFID + DMA INITIALIZATION
 	// -------------------------
@@ -57,13 +68,6 @@ int main(void)
 	setup_external_timesync();
 	setup_uart1();
 	setup_tim6();
-
-	// ---------------------
-	// KEYPAD INITIALIZATION
-	// ---------------------
-	enable_ports_keypad_LED();
-	setup_tim7();
-	setup_pcb_leds();
 
 	// -----------------
 	// SD INITIALIZATION

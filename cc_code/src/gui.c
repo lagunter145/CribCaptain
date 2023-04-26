@@ -400,7 +400,7 @@ void guiMAINInit(void) {
 	//fillScreen(YELLOW);
 	//initialize buttons
 	buttonArr[0] = init_button(0, 0, 300, 100, "", base_color);
-	buttonArr[1] = init_button(25, 375, 200, 80, "Refresh", acce_color);
+	buttonArr[1] = init_button(25, 350, 200, 80, "Refresh", acce_color);
 	buttonArr[2] = init_button(275, 350, 200, 80, "Calendar", acce_color);
 	buttonArr[3] = init_button(525, 350, 250, 80, "Roommates", acce_color);
 	buttonArr[4] = init_button(100, 100, 300, 100, "", acce_color);
@@ -430,28 +430,29 @@ void guiMAINDraw(void) {
 
 	dist_chores();
 	textEnlarge(1);
-	uint16_t x = 105;
-	uint16_t y = 105;
+	uint16_t x = 110;
+	uint16_t y = 115;
 	for(int i = 0; i < MAXNUM_ROOMMATES; i++) {
 		if(i == 1) {
-			x = 405;
-			y = 105;
+			x = 410;
+			y = 115;
 		} else if (i == 2) {
-			x = 105;
-			y = 205;
+			x = 110;
+			y = 215;
 		} else if (i == 3) {
-			x = 405;
-			y = 205;
+			x = 410;
+			y = 215;
 		}
 		textSetCursor(x, y);
 		if(chores[roommates[i].chore_4_today].done_today) {
 			graphicsMode();
-			drawRect(x - 5, y - 5, (x - 5) + 300, (y - 5) + 100, acce_color, 1);
+			drawRect(x - 10, y - 15, (x - 10) + 300, (y - 15) + 100, acce_color, 1);
 			textMode();
 			textColor(base_color, acce_color);
+			checkmark(x + 235, y + 50, base_color);
 		}
 		textWrite(roommates[i].name, roommates[i].nameLength);
-		textSetCursor(x + 10, y + 55);
+		textSetCursor(x + 20, y + 45);
 		textWrite(chores[roommates[i].chore_4_today].name, chores[roommates[i].chore_4_today].nameLength);
 		textColor(acce_color, base_color);
 	}
@@ -862,7 +863,7 @@ void guiROOMMATESDraw() {
 	for(int i = 0; i < MAXNUM_ROOMMATES; i++) {
 		// first place checkmark in right spot
 		if(roommates[i].home) {
-			checkmark(338, height);
+			checkmark(338, height, acce_color);
 			// if home, write their number of guests
 			itoa(roommates[i].num_guests, numGuests, 10);
 			if(roommates[i].num_guests < 10) {
@@ -874,7 +875,7 @@ void guiROOMMATESDraw() {
 			}
 
 		} else {
-			checkmark(485, height);
+			checkmark(485, height, acce_color);
 			// if away, write no guests
 			textSetCursor(660, (height - 20));
 			textWrite("-", 1);
@@ -899,15 +900,15 @@ void guiROOMMATESDraw() {
 	buttonArr[1].pressed = 0;
 	buttonArr[1].on = 1;
 }
-void checkmark(uint16_t start_x, uint16_t start_y) {
+void checkmark(uint16_t start_x, uint16_t start_y, uint16_t color) {
 	uint8_t w = 4;
-	drawRect(start_x, start_y, start_x + w, start_y + w, acce_color, 1);
-	drawRect(start_x + w, start_y + w, start_x + (2 * w), start_y + (2 * w), acce_color, 1);
-	drawRect(start_x + (2 * w), start_y + (2 * w), start_x + (3 * w), start_y + (3 * w), acce_color, 1);
-	drawRect(start_x + (3 * w), start_y + (1 * w), start_x + (4 * w), start_y + (2 * w), acce_color, 1);
-	drawRect(start_x + (4 * w), start_y + (0 * w), start_x + (5 * w), start_y + (1 * w), acce_color, 1);
-	drawRect(start_x + (5 * w), start_y + (-1 * w), start_x + (6 * w), start_y + (0 * w), acce_color, 1);
-	drawRect(start_x + (6 * w), start_y + (-2 * w), start_x + (7 * w), start_y + (-1 * w), acce_color, 1);
+	drawRect(start_x, start_y, start_x + w, start_y + w, color, 1);
+	drawRect(start_x + w, start_y + w, start_x + (2 * w), start_y + (2 * w), color, 1);
+	drawRect(start_x + (2 * w), start_y + (2 * w), start_x + (3 * w), start_y + (3 * w), color, 1);
+	drawRect(start_x + (3 * w), start_y + (1 * w), start_x + (4 * w), start_y + (2 * w), color, 1);
+	drawRect(start_x + (4 * w), start_y + (0 * w), start_x + (5 * w), start_y + (1 * w), color, 1);
+	drawRect(start_x + (5 * w), start_y + (-1 * w), start_x + (6 * w), start_y + (0 * w), color, 1);
+	drawRect(start_x + (6 * w), start_y + (-2 * w), start_x + (7 * w), start_y + (-1 * w), color, 1);
 }
 
 // MSG screen

@@ -161,17 +161,17 @@ uint8_t read_byte(void) {
     // wait for RXNE bit to be set
 	int tc = 0;
     while (!(USART5->ISR & USART_ISR_RXNE)) {
-    	if (tc < RFID_TIMEOUT)
-    		tc++;
-    	else
-    		return 0;
+    	//if (tc < RFID_TIMEOUT)
+    	//	tc++;
+    	//else
+    	//	return 0;
     }
     uint8_t c = USART5->RDR;
     return c;
 }
 
 /***************************************************************************
- * THE FOLLOWING FUNCTIONS ARE LARGELY TAKEN FROM ELECHOUSE'S C++ LIBRARY ON
+ * THE FOLLOWING FUNCTIONS ARE LARGELY TAKEN FROM ELECHOUSE'S C++ LIBRARY gON
  * GITHUB, TRANSLATED TO C SYNTAX.
  * https://github.com/elechouse/PN532/blob/PN532_HSU/PN532/PN532.cpp
 ***************************************************************************/

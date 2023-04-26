@@ -62,7 +62,7 @@ void guiCALENDARInit();
 void guiCALENDARDraw(int mode, int redraw);
 void guiROOMMATESInit();
 void guiROOMMATESDraw();
-void checkmark(uint16_t start_x, uint16_t start_y);
+void checkmark(uint16_t start_x, uint16_t start_y, uint16_t color);
 void guiMSGInit();
 int rightALIGN(int right_side, uint8_t string_length);
 void dist_chores();
