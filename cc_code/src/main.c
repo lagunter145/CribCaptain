@@ -113,11 +113,7 @@ int main(void)
 
 	// GUI Initialization
 	setup_tim16();
-	//guiMAINInit();
-	//guiCHECKINInit();
-	//guiCALENDARInit();
 	guiLOADINGInit();
-	//guiLOADINGDraw();
 	//drawPic(200,200);
 
 	setup_t_irq();

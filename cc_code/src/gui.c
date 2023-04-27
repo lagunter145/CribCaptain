@@ -123,18 +123,6 @@ void TIM16_IRQHandler(void) {
 }
 
 void draw_button(struct Button *but, uint16_t button_color, uint16_t text_color) {
-	//old mode
-	//textMode();
-	/*
-	textEnlarge(2);
-	textColor(acce_color, base_color);
-	textSetCursor(buttonArr[0].x1, buttonArr[0].y1);
-	textTransparent(acce_color);
-	strcpy(buttonArr[0].label, "button2");
-	buttonArr[0].labelLength = strlen(buttonArr[0].label);
-	textWrite(buttonArr[0].label, buttonArr[0].labelLength);
-	graphicsMode();
-	*/
 	//Need to draw the rectangle first
 	graphicsMode();
 	drawRect(but->x1, but->y1, but->x2, but->y2, button_color, 1);
@@ -410,11 +398,11 @@ void guiMAINInit(void) {
 }
 
 void guiMAINDraw(void) {
+	jiffy ++;
 	// clear screen
 	fillScreen(base_color);
 	// draw screen
 	// draw button
-	//draw_button(&(buttonArr[1]), base_color, acce_color);
 	draw_button(&(buttonArr[1]), acce_color, base_color);
 	draw_button(&(buttonArr[2]), acce_color, base_color);
 	draw_button(&(buttonArr[3]), acce_color, base_color);
@@ -457,37 +445,7 @@ void guiMAINDraw(void) {
 		textColor(acce_color, base_color);
 	}
 
-//	textWrite(roommates[0].name, roommates[0].nameLength);
-//	textSetCursor(110, 160);
-//	textWrite(chores[roommates[0].chore_4_today].name, strlen(chores[roommates[0].chore_4_today].name));
-//
-//	textSetCursor(405, 105);
-//	textWrite(roommates[1].name, roommates[1].nameLength);
-//	textSetCursor(410, 160);
-//	textWrite(chores[roommates[1].chore_4_today].name, strlen(chores[roommates[1].chore_4_today].name));
-//
-//	textSetCursor(105, 205);
-//	textWrite(roommates[2].name, roommates[2].nameLength);
-//	textSetCursor(110, 260);
-//	textWrite(chores[roommates[2].chore_4_today].name, strlen(chores[roommates[2].chore_4_today].name));
-//
-//	textSetCursor(405, 205);
-//	textWrite(roommates[0].name, roommates[0].nameLength);
-//	textSetCursor(410, 260);
-//	textWrite(chores[roommates[0].chore_4_today].name, strlen(chores[roommates[0].chore_4_today].name));
-
-
 	// Draw chores buttons
-
-//	for(int r = 0; r < MAXNUM_ROOMMATES; r++) {
-//		textWrite(roommates[r].name, roommates[r].nameLength);
-//		textWrite(chores[roommates[r].chore_4_today].name, chores[roommates[r].chore_4_today].nameLength);
-//	}
-//	textSetCursor(buttonArr[0].x1, buttonArr[0].y1);
-//	textTransparent(base_color);
-//	strcpy(buttonArr[1].label, "button2");
-//	buttonArr[1].labelLength = strlen(buttonArr[1].label);
-//	textWrite(buttonArr[1].label, buttonArr[1].labelLength);
 	graphicsMode();
 	drawRect(100, 100, 700, 300, acce_color, 0);
 	drawRect(100, 100, 400, 200, acce_color, 0);
@@ -529,6 +487,7 @@ void guiREFRESHInit(void) {
 	buttonArr[4] = init_button(550, 200, 200, 80, "CHORES", acce_color);
 }
 void guiREFRESHDraw(void) {
+	jiffy += 15;
 	fillScreen(base_color);
 	draw_button(&(buttonArr[1]), acce_color, base_color);
 	draw_button(&(buttonArr[2]), acce_color, base_color);
@@ -575,6 +534,7 @@ void guiCHECKINInit(void) {
 }
 int srand_set = 0;
 void guiCHECKINDraw(void) {
+	jiffy += 15;
 	if(!srand_set) {
 		srand(2147483647 / second);
 		srand_set = 1;
@@ -677,6 +637,7 @@ void guiCALENDARInit() {
 }
 int old_mode = 0;
 void guiCALENDARDraw(int mode, int redraw) {
+	jiffy += 25;
 	if(redraw) {
 		fillScreen(base_color);
 		for(int i = 1; i < 7; i++) {
@@ -824,6 +785,7 @@ void guiROOMMATESInit() {
 }
 
 void guiROOMMATESDraw() {
+	jiffy += 15;
 	fillScreen(base_color);
 	draw_button(&(buttonArr[1]), acce_color, base_color);
 	int x_start = rightALIGN(800, strlen("ROOMMATES"));
@@ -939,6 +901,7 @@ void guiMSGInit(char* msg) {
 }
 
 void guiRedraw() {
+	jiffy += 15;
 	//redraws the gui to whatever the current state is
 	switch(guiMenuState) {
 		case LOADING:
@@ -1083,6 +1046,7 @@ void dist_chores() {
 //		- if not, do nothing
 // =======================================================================================
 void guiStateHandler(stateType state) {
+
 	switch(state) {
 		case LOADING: // current state is LOADING
 			if (buttonArr[1].pressed){
@@ -1339,6 +1303,8 @@ void guiStateHandler(stateType state) {
 		guiRedraw();
 		colorUpdated = 0;
 	}
+
+	writeReg(RA8875_INTC2, RA8875_INTC2_TP);
 }
 
 
@@ -1472,8 +1438,7 @@ uint8_t buttonHandler(int xc, int yc) {
 	if (state_flag) {
 		return 1;
 	}
-	//drawCircle(xc, yc, 4, acce_color, 1);
-	//writeReg(RA8875_INTC2, RA8875_INTC2_TP);
+
 	return 0;
 }
 

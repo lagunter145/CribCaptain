@@ -174,8 +174,11 @@ void EXTI4_15_IRQHandler(void) {
 		//if ((a + b + c + d + e) > 2) {
 		jiffy++;
 
+		if (jiffy % 25 == 0)
+			writeReg(RA8875_INTC2, RA8875_INTC2_TP);
+
 		//second
-		if (jiffy == 60){
+		if (jiffy >= 60){
 			jiffy = 0;
 			second++;
 			//toggle_pin(GPIOA, 5);
@@ -191,6 +194,9 @@ void EXTI4_15_IRQHandler(void) {
 				}
 			}
 
+		}
+
+		if (jiffy == 30 || jiffy == 59) {
 			if (guiMenuState == LOADING && timeAcquired) {
 				//wifi is connected
 				guiMenuState = MAIN;
@@ -255,7 +261,7 @@ void TIM6_DAC_IRQHandler(void) {
 	//HTTP time get requests
 	if (tim6semaphore == 1) {
 		//char timeurl[200] = "timezone.abstractapi.com/v1/current_time/?api_key=9e51598312064a7494ae4b60562fbc71&location=Indianapolis";
-		char timeurl[200] = "192.168.193.87/update.php/?type=";
+		char timeurl[200] = "192.168.124.87/update.php/?type=";
 		//char timeurl[200] = "192.168.175.87/checkin.php/?uid=1&checkedIn=9&numGuest=12";
         timeurl[32] = refreshState;
 		//connect the socket (AT+CIPSTART)

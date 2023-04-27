@@ -128,7 +128,7 @@ void DMA1_CH1_IRQHandler(void) {
         // turn off DMA to reconfigure it
 		DMA1_Channel1->CCR &= ~DMA_CCR_EN;
 		USART5->CR3 &= ~(USART_CR3_DMAT | USART_CR3_DMAR);
-		readPassiveTargetID(PN532_MIFARE_ISO14443A, NULL, NULL, 0);
+		while (readPassiveTargetID(PN532_MIFARE_ISO14443A, NULL, NULL, 0) != 1) {}
 		USART5->CR3 |= USART_CR3_DMAT | USART_CR3_DMAR;
 		DMA1_Channel1->CNDTR = 19;
 	    // turn DMA back on
@@ -161,10 +161,10 @@ uint8_t read_byte(void) {
     // wait for RXNE bit to be set
 	int tc = 0;
     while (!(USART5->ISR & USART_ISR_RXNE)) {
-    	//if (tc < RFID_TIMEOUT)
-    	//	tc++;
-    	//else
-    	//	return 0;
+    	if (tc < RFID_TIMEOUT)
+    		tc++;
+    	else
+    		return 0;
     }
     uint8_t c = USART5->RDR;
     return c;
@@ -232,6 +232,7 @@ int8_t readAckFrame() {
     if( memcmp(ackBuf, PN532_ACK, 6) ){
         return PN532_INVALID_ACK;
     }
+//	nano_wait(5000);
     return 0;
 }
 

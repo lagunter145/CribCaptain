@@ -110,7 +110,7 @@ void EXTI0_1_IRQHandler (void) {
 
 		if(buttonHandler(xc,yc) == 0){
 		// return = 0, no GUI state change, acknowledge touch interrupt right away
-		  writeReg(RA8875_INTC2, RA8875_INTC2_TP);
+//		  writeReg(RA8875_INTC2, RA8875_INTC2_TP);
 		}
 	}
 }

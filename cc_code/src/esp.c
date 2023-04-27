@@ -84,8 +84,14 @@ uint8_t wifi_sendchar(uint8_t txChar) {
 }
 
 uint8_t wifi_getchar(void) {
+	int tc = 0;
 	//Wait for the USART5 ISR RXNE (read data register is not empty) bit to be set
-	while(!(USART1->ISR & USART_ISR_RXNE));
+	while(!(USART1->ISR & USART_ISR_RXNE)){
+		if (tc < 10000)
+			tc++;
+		else
+			return -1;
+	}
 	//return the value of the receive data register
 	uint8_t c = USART1->RDR;
 	return c;
@@ -111,7 +117,7 @@ char wifi_checkstring(char * response) {
 }
 
 volatile char url[200] = "";
-const char serverURL[] = "192.168.193.87";
+const char serverURL[] = "192.168.124.87";
 //192.168.175.87/checkin.php/?uid=2&checkedIn=9&numGuest=12
 void http_setupcheckin(char * uid, uint8_t checkedIn, uint8_t numGuest) {
 	char buff[3];
@@ -371,6 +377,11 @@ void wifi_parseresponse_events(volatile char * http, char refreshState) {
 void USART1_IRQHandler(void) {
 	if (USART1->ISR & USART_ISR_RXNE) {
 		uint8_t rxByte = wifi_getchar();
+//		if ((int)rxByte == -1) {//if the USART timesout, exit the interrupt
+//			// maybe need to acknowledge interrupt
+//			USART1->RQR |= USART_RQR_RXFRQ;
+//			return;
+//		}
 
 		//state machine to recognize "+IPD," and then the number that comes after it
 		//which is the size of the incoming HTTP response in bytes (including /n and /r)
@@ -590,6 +601,7 @@ void USART1_IRQHandler(void) {
 		}
 	}
 
+	USART1->ICR |= USART_ICR_ORECF;
 }
 
 
